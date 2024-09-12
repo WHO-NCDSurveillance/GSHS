@@ -86,5 +86,4 @@ source(paste0(getwd(),'/scripts/9_factsheet.R'))
 source(paste0(getwd(),'/scripts/10_sample_description.R'))
 ###Stopping the cores
 stopCluster(cl)
-#######################
-######################
+
