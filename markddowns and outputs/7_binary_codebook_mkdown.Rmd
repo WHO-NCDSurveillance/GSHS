@@ -1,0 +1,164 @@
+---
+output: html_document
+---
+
+## Survey Design Definition
+
+```{r, eval = FALSE, echo = TRUE}
+# Define survey design
+svy_data3 <- svydesign(id = ~psu,
+                       weights = ~normalised_weights,
+                       strata = ~stratum,
+                       data = data,
+                       nest = TRUE)
+```
+
+**Explanation:**
+- This section sets up the survey design using the `svydesign` function from the `survey` package. It specifies the sampling design, including primary sampling units (`psu`), weights (`normalised_weights`), strata (`stratum`), and data source (`data`). The `nest = TRUE` parameter indicates that the survey data is nested.
+
+## Function: binary_dictionary
+
+```{r, eval = FALSE, echo = TRUE}
+# Function to generate a codebook for binary variables
+binary_dictionary <- function(std_var = 'DB_B_HUNGRY', ctry_var = '') {
+  
+  # Check if the variable is a factor (categorical)
+  if (any(class(data[, std_var]) == 'factor')) {
+    formula <- make.formula(std_var)
+    
+    # Calculate frequencies and percentages
+    output <- data %>% 
+      dplyr::reframe(label_names1 = c("", ""),
+                     label_names2 = names(table(data[, std_var])),
+                     unweighted_freq = table(eval(parse(text = std_var))),
+                     weighted_perc = formatC(round(prop.table(svytable(formula, design = svy_data3)) * 100, 1), format = 'f', digits = 1)
+      ) %>% 
+      mutate(unweighted_freq = as.character(unweighted_freq),
+             weighted_perc = as.character(weighted_perc)) %>%
+      dplyr::bind_rows(data %>% 
+                        reframe(label_names1 = '',
+                                label_names2 = eval(parse(text = lang_titles[2])),
+                                unweighted_freq = table(is.na(eval(parse(text = std_var))))['TRUE'],
+                                weighted_perc = '')
+      ) %>%
+      mutate(unweighted_freq = as.character(unweighted_freq),
+             weighted_perc = as.character(weighted_perc))
+    
+    length_output <- nrow(output)
+    final_output <- bind_rows(
+      c(standard_var = toupper(std_var), country_var = '\t', label_names1 = '\t', label_names2 = '\t', unweighted_freq = '\t', weighted_perc = '\t'),
+      c(standard_var = toupper(std_var), country_var = toupper(ctry_var), label_names1 = label(data[, std_var]), label_names2 = '', unweighted_freq = '', weighted_perc = ''),
+      bind_cols(standard_var = rep(toupper(std_var), length_output), country_var = rep('', length_output), output)
+    )
+    
+  } else {
+    # If the variable is not a factor, handle it differently
+    final_output <- bind_rows(
+      c(standard_var = toupper(std_var), country_var = '\t', label_names1 = '\t', label_names2 = '\t', unweighted_freq = '\t', weighted_perc = '\t'),
+      bind_cols(standard_var = toupper(std_var), country_var = toupper(ctry_var), label_names1 = label(data[, std_var]), label_names2 = '', unweighted_freq = '', weighted_perc = '')
+    )
+  }
+  
+  # Set column names and remove row names
+  colnames(final_output) <- eval(parse(text = lang_titles[3]))
+  rownames(final_output) <- NULL
+  
+  return(final_output)
+}
+```
+
+**Explanation:**
+- This function, `binary_dictionary`, generates a codebook for a specified binary variable (`std_var`). It checks if the variable is categorical (a factor). If it is, it calculates frequencies and weighted percentages using survey weights (`svy_data3`). If not, it simply retrieves basic information. The function returns a formatted data frame with relevant information.
+
+## Generate Codebook for Binary Variables
+
+```{r, eval = FALSE, echo = TRUE}
+# Initialize list to store generated codebooks
+generated_binary_dictionary <- list()
+
+# Loop through new_variables to generate codebooks
+for (i in 1:length(new_variables)) {
+  generated_binary_dictionary[[i]] <- binary_dictionary(std_var = gsub('\t| ', '', new_variables[i]))
+}
+
+# Combine codebooks into a single data frame
+generated_binary_dictionary <- do.call('rbind', generated_binary_dictionary) %>% as.data.frame()
+
+# Exclude Country Variable Name
+generated_binary_dictionary <- generated_binary_dictionary[, -2]
+
+# Identify Cells to Convert to NA
+binary_cells_to_NA <- setdiff(as.numeric(gsub('V', '', rownames(generated_binary_dictionary))),
+                              as.numeric(rownames(generated_binary_dictionary)[generated_binary_dictionary[, 3] == '']))
+```
+
+**Explanation:**
+- This section generates codebooks for all specified binary variables (`new_variables`). It uses the `binary_dictionary` function to create individual codebooks, stores them in a list (`generated_binary_dictionary`), and then combines them into a single data frame. It identifies cells that need to be converted to NA based on certain conditions.
+
+## Format for French Language
+
+```{r, eval = FALSE, echo = TRUE}
+if (language == 'FRENCH') {
+  generated_binary_dictionary[, 5] <- gsub('\\.', ',', generated_binary_dictionary[, 5])
+}
+```
+
+**Explanation:**
+- This snippet checks if the language setting (`language`) is French. If true, it replaces dots with commas in the fifth column (`generated_binary_dictionary[, 5]`), which typically contains percentages formatted for display.
+
+## Generate Flextable
+
+```{r, eval = FALSE, echo = TRUE}
+# Generate flextable for the binary dictionary
+flex_binary_dictionary <- generated_binary_dictionary %>% 
+  flextable() %>%
+  flextable::style(pr_t = fp_text(font.family = 'Source Sans Pro'), part = 'all') %>%
+  bold(part = 'header') %>%
+  hline(i = c(as.numeric(gsub('V', '', rownames(generated_binary_dictionary)[generated_binary_dictionary[, 3] == eval(parse(text = paste0('if (language == "ENGLISH")\n{"Missing"} else if (language == "FRENCH")\n{"Manquant"} else if (language == "SPANISH")\n{"Perdido"} else if (language == "RUSSIAN")\n{"Потерянный"} else {}')))]))), 
+        border = fp_border(color = "gray", style = "solid", width = 1)) %>%
+  fontsize(size = 9, part = "all") %>%
+  autofit() %>%
+  merge_h_range(i = c(as.numeric(gsub('V', '', rownames(generated_binary_dictionary)[generated_binary_dictionary[, 3] == '']))), j1 = 2, j2 = 5) %>%
+  merge_h_range(i = 1, j1 = 2, j2 = 3, part = 'header') %>%
+  width(j = 2, 0.5, unit = "in") %>%
+  width(j = 3, 3, unit = "in") %>%
+  align(j = 4:5, align = 'right', part = 'all') %>%
+  align(j = 2, align = 'center', part = 'header') %>%
+  valign(j = 1:5, valign = 'top') %>%
+  paginate(group = colnames(generated_binary_dictionary)[1]) %>%
+  padding(padding = 0, part = "all") %>%
+  compose(j = 1, i = binary_cells_to_NA, value = as_paragraph(as_chunk(NA)))
+```
+
+**Explanation:**
+- This part generates a formatted table (`flextable`) from `generated_binary_dictionary`. It applies styles, merges cells, adjusts widths, and aligns content for proper display in a Word document. It also handles specific formatting based on the language setting (`language`), such as replacing dots with commas for French.
+
+## Load Template and Replace Content
+
+```{r, eval = FALSE, echo = TRUE}
+# Load the Word template
+doc <- read_docx("codebook_template.docx")
+
+# Replace placeholders in the template
+doc <- headers_replace_text_at_bkm(doc, "country", site_name)
+doc <- headers_replace_text_at_bkm(doc, "year", paste0(lang_titles[21], ' ', survey_year))
+doc <- headers_replace_text_at_bkm(doc, "Codebook", lang_titles[22])
+
+# Insert flextable into the document
+doc <- doc %>% 
+  cursor_bookmark(id = "table1") %>%
+  body_add_flextable(flex_binary_dictionary, width = dim(flex_binary_dictionary)$widths * 6.5 / (flextable_dim(flex_binary_dictionary)$widths), pos = "on", align = 'left')
+```
+
+**Explanation:**
+- This section loads a Word document template (`codebook_template.docx`), replaces specific placeholders (`country`, `year`, `Codebook`) with dynamic content (`site_name`, `survey_year`, `lang_titles`), and inserts the generated `flex_binary_dictionary` table into the document at a specified bookmark (`table1`).
+
+## Print the Final Document
+
+```{r, eval = FALSE, echo = TRUE}
+# Print the final document to a Word file
+print(doc, target = paste0(getwd(), '/reports/', survey_year, ' ', site_name, ' Binary_Codebook.docx'))
+```
+
+**Explanation:**
+- Finally, this snippet prints the modified Word document (`doc`) to a file (`Binary_Codebook.docx`) in the `reports` directory. The file name includes the survey year (`survey_year`) and site name (`site_name`).

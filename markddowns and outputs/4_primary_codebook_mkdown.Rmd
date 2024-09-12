@@ -1,0 +1,163 @@
+---
+output: html_document
+---
+This code segment covers data reading, processing, conditional logic based on BMI indicators, factor conversion for categorical variables, dictionary generation, and codebook reporting, incorporating elements like language-specific titles and formatting. Each step is designed to handle data preparation, analysis, and reporting tasks efficiently.
+
+```{r, eval = FALSE, echo = TRUE}
+language_matrix = read_excel(paste0(getwd(),'/scripts/LANGUAGES.xlsx')) %>% as.data.frame()
+colnames(language_matrix) = tolower(colnames(language_matrix))
+lang_titles = language_matrix[, tolower(language)]
+```
+
+**Explanation:**
+1. **Reading Language Matrix:** Reads an Excel file (`LANGUAGES.xlsx`) located in the `scripts` directory and converts it into a data frame.
+2. **Column Names:** Converts all column names to lowercase for consistency.
+3. **Extracting Language Titles:** Extracts a specific column (`language`) from the `language_matrix` to get language titles (`lang_titles`).
+
+### Mapping and Data Preparation
+
+```{r, eval = FALSE, echo = TRUE}
+mapping_matrix = read_excel(paste0(getwd(),'/data inputs/mapping_matrix.xlsx'))
+original_raw_data = read_excel(paste0(getwd(),'/data inputs/raw_data.xlsx'))
+
+map_dictionary = mapping_matrix %>% 
+  dplyr::filter(!is.na(survey_question)) %>% 
+  dplyr::select(all_of(c("site", "survey_question","var_levels"))) %>% 
+  distinct() %>% 
+  rowwise %>% 
+  mutate(
+    standard = gsub('\\s','',strsplit(survey_question,':')[[1]][1]), 
+    revised_var_levels = c(gsub('.:','',strsplit(var_levels, "[;]"))), 
+    standard = toupper(standard),
+    unlabelled_levels = paste0('c(',paste0('"',sapply(strsplit(unlist(strsplit(var_levels, split = ";")), split = ":"), function(x) gsub('\\s','',x[1])),'"', collapse = ','),')'),
+    unlabelled_levels = ifelse(is.na(revised_var_levels),NA,unlabelled_levels),
+    site = tolower(site)
+  )
+
+map_categorical = map_dictionary %>% 
+  dplyr::filter(standard!= 'DB_HEIGHT' & standard!= 'DB_WEIGHT')
+```
+
+**Explanation:**
+1. **Reading Data Files:** Reads two Excel files (`mapping_matrix.xlsx` and `raw_data.xlsx`) located in the `data inputs` directory.
+2. **Mapping Dictionary Preparation:**
+   - **Filtering and Selecting Columns:** Filters out rows where `survey_question` is not NA and selects specific columns (`site`, `survey_question`, `var_levels`), then removes duplicate rows.
+   - **Data Transformation:** Performs row-wise operations to extract `standard` variables, clean up whitespace, convert `survey_question` into uppercase, and create `unlabelled_levels` for categorical variables.
+   - **Categorical Mapping:** Filters out specific standards (`DB_HEIGHT` and `DB_WEIGHT`) from the `map_dictionary` to create `map_categorical`.
+
+### Conditional Processing Based on BMI Indicators
+
+```{r, eval = FALSE, echo = TRUE}
+if (compute_BMI_indicators == TRUE) {
+  updated_matrix = mapping_matrix %>%
+    mutate(
+      numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'",numerator),
+      numerator = ifelse(bin_standard =='DB_OVERWT', "c('Overweight','Obese')",numerator),
+      numerator = ifelse(bin_standard =='DB_OBESE', "'Obese'",numerator),
+      site = ifelse(bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE','BMI_status',site)
+    )
+} else {
+  updated_matrix = mapping_matrix %>% 
+    dplyr::filter(!(bin_standard=='DB_HEIGHT'|bin_standard=='DB_WEIGHT'|
+                   bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE'))
+
+  map_dictionary = map_dictionary %>% 
+    dplyr::filter(!(standard=='DB_HEIGHT' | standard=='DB_WEIGHT'))
+}
+```
+
+**Explanation:**
+- **Conditional Update:** Depending on the value of `compute_BMI_indicators`, either updates `mapping_matrix` to include BMI-related variables (`DB_UNDERWT`, `DB_OVERWT`, `DB_OBESE`) in `updated_matrix` with corresponding `numerator` and `site` changes, or filters out these BMI-related variables from `mapping_matrix` and `map_dictionary`.
+
+### Data Processing and Factor Conversion
+
+```{r, eval = FALSE, echo = TRUE}
+data = data_v1 %>% 
+  mutate(
+    normalised_weights = weight,
+    age_cat = case_when(
+      DE_AGE %in% c('A', 'B') ~ '12 or younger',
+      DE_AGE %in% c('C', 'D', 'E') ~ '13 - 15',
+      DE_AGE %in% c('F', 'G') ~ '16 or 17',
+      DE_AGE == 'H' ~ '18 or older'
+    ) %>% factor(levels = 1:4, labels = c('12 or younger','13 - 15','16 or 17','18 or older'))
+  )
+
+original_data = data
+
+for (new_variables in map_categorical$standard) {
+  eval(parse(text = paste0('original_data$', new_variables, '= factor(as.character(original_data$', new_variables, '), levels = ', map_categorical$unlabelled_levels, ', labels = ', map_categorical$unlabelled_levels, ')')))
+  
+  eval(parse(text = paste0('data$', new_variables, '= factor(as.character(data$', new_variables, '), levels = ', map_categorical$unlabelled_levels, ', labels = ', map_categorical$revised_var_levels, ')')))
+}
+```
+
+**Explanation:**
+- **Data Transformation:** Uses processed data (`data_v1`) to create `data`.
+- **Variable Modification:** Creates `normalised_weights` and `age_cat` factors based on `weight` and `DE_AGE` values respectively.
+- **Factor Conversion:** Converts categorical variables listed in `map_categorical$standard` to factors with specified levels and labels.
+
+### Generating Dictionary (as a word document)
+
+```{r, eval = FALSE, echo = TRUE}
+gen_dictionary_fn = function(std_var ='DB_HUNGRY', ctry_var = 'q6') {
+  # Function to generate dictionary entries for a given standard variable (`std_var`) and country variable (`ctry_var`)
+  # Includes formatting and calculations for unweighted frequencies and weighted percentages
+  
+  # Function body omitted for brevity
+}
+
+standard_variables = gsub('\t','',map_dictionary$standard)
+country_variables = gsub('\t','',map_dictionary$site)
+
+generated_dictionary = list()
+
+for (i in 1:length(standard_variables)) {
+  generated_dictionary[[i]] = gen_dictionary_fn(std_var = standard_variables[i], ctry_var = country_variables[i])
+}
+
+generated_dictionary = do.call('rbind', generated_dictionary) %>% as.data.frame()
+
+if(language =='FRENCH') {
+  generated_dictionary[,6] = gsub('\\.',',',generated_dictionary[,6])
+}
+
+flex_dictionary = generated_dictionary %>% 
+  flextable()%>% # Convert to flextable
+  flextable::style(pr_t=fp_text(font.family='Source Sans Pro'), part = 'all')%>% # Style text
+  bold(part = 'header')%>% # Bold header
+  hline(i = c(as.numeric(gsub('V','',rownames(generated_dictionary)[generated_dictionary[,4]==eval(parse(text=lang_titles[2])) | generated_dictionary[,2]=='HEIGHT' | generated_dictionary[,2]=='WEIGHT']))), 
+        border=fp_border(color="gray", style="solid", width=1)) %>% # Add horizontal lines
+  fontsize(size = 9 ,part = "all")%>% # Set font size
+  autofit()%>% # Autofit columns
+  merge_h_range(i = c(as.numeric(gsub('V','',rownames(generated_dictionary)[generated_dictionary[,2]!='']))), j1 = 3, j2 = 6)%>% # Merge columns
+  merge_h_range(i = 1, j1 = 3, j2 = 4, part = 'header') %>%
+  width(j = 3, 0.5, unit = "in")%>% # Set column widths
+  width(j = 4, 3, unit = "in")%>%
+  align(j = 5:6, align = 'right', part = 'all') %>%
+  align(j = 3, align = 'center', part = 'header') %>%
+  valign(j = 1:6, valign = 'top')%>%
+  paginate(group = colnames(generated_dictionary)[1])%>%padding(padding = 0, part = "all")%>%
+  compose(j = 1, i = cells_to_NA, value = as_paragraph(as_chunk(NA)))
+
+# Printing Codebook
+doc = read_docx(paste0(getwd(),'/templates/codebook_template.docx'))
+
+doc = headers_replace_text_at_bkm(doc,"country",site_name)
+doc = headers_replace_text_at_bkm(doc,"year",paste0(lang_titles[21],' ',survey_year))
+doc = headers_replace_text_at_bkm(doc,"Codebook",lang_titles[22])
+
+doc = doc %>% 
+  cursor_bookmark(id  = "table1") %>%
+  body_add_flextable(width(flex_dictionary, width = dim(flex_dictionary)$widths*6.5/(flextable_dim(flex_dictionary)$widths)), pos = "on", align = 'left')
+
+print(doc,target=paste0(getwd(),'/reports/',survey_year,' ' ,site_name,' Codebook.docx'))
+```
+
+**Explanation:**
+- **Dictionary Generation (`gen_dictionary_fn`):** Defines a function to generate dictionary entries (`generated_dictionary`) for each `standard_variables` and `country_variables` pair, calculating unweighted frequencies and weighted percentages.
+- **Flextable Generation:** Converts `generated_dictionary` into
+
+ a `flextable`, styling and formatting it for presentation.
+- **Reporting (`read_docx`):** Reads a template Word document (`codebook_template.docx`), replaces placeholders with site name (`site_name`), survey year (`survey_year`), and language-specific titles (`lang_titles`), and inserts `flex_dictionary` as a table.
+- **Output:** Prints the finalized document as a codebook in Word format to the specified directory.

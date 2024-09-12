@@ -1,0 +1,300 @@
+---
+output: html_document
+---
+## Function: detailed_tab_fn
+
+This function generates detailed tables based on specified standard variables (`std_var`) and conditions.
+
+### Parameters:
+- `std_var`: Standard variable name (default is `'DB_HUNGRY'`).
+
+### Returns:
+- None (output is saved to files and combined into a final Word document).
+
+### Function Explanation:
+
+```{r, eval = FALSE, echo = TRUE}
+detailed_tab_fn = function(std_var ='DB_HUNGRY')
+{
+  ### Generate Formula
+  
+  formula = make.formula(std_var)
+  
+  ### Conditional Output Function
+  
+  cond_output = function(condition = "age_cat=='12 or younger'")
+  {
+    if (condition == '')
+    {
+      ### Calculate unfiltered table output
+      
+      tab_output =  data %>%
+        dplyr::reframe(label_names = names(table(eval(parse(text = std_var)))),
+                       unweighted_freq = table(eval(parse(text = std_var))),
+                       weighted_perc = formatC(round(prop.table(svytable(formula, design = svy_data)) * 100, 1), format = 'f', digits = 1)) %>%
+        mutate(unweighted_freq = as.character(unweighted_freq)) %>%
+        tidyr::pivot_longer(cols = c(weighted_perc, unweighted_freq)) %>%
+        select(-name) %>%
+        mutate(label_names = as.character(label_names), value = as.character(value)) %>%
+        as.data.frame() %>%
+        bind_rows(data.frame(label_names = eval(parse(text = lang_titles[4])), value ='100%')) %>%
+        bind_rows(data.frame(label_names = eval(parse(text = lang_titles[4])), value = eval(parse(text = paste0('sum(table(data$', std_var, '), na.rm = TRUE)'))))) %>%
+        mutate(label_names = as.character(label_names), value = as.character(value))
+    }
+    else
+    {
+      ### Calculate filtered table output based on condition
+      
+      tab_output =  eval(parse(text = paste0('data %>% dplyr::filter (', condition, ')')))%>%
+        dplyr::reframe(label_names = names(table(eval(parse(text = std_var)))),
+                       unweighted_freq = table(eval(parse(text = std_var))),
+                       weighted_perc = formatC(round(prop.table(svytable(formula, design = subset(svy_data, eval(parse(text = condition)))))*100, 1), format = 'f', digits = 1)) %>%
+        mutate(unweighted_freq = as.character(unweighted_freq)) %>%
+        tidyr::pivot_longer(cols = c(weighted_perc, unweighted_freq)) %>%
+        select(-name)%>%
+        mutate(label_names = as.character(label_names), value = as.character(value)) %>%
+        as.data.frame() %>%
+        bind_rows(data.frame(label_names = eval(parse(text = lang_titles[4])), value ='100%')) %>%
+        bind_rows(data.frame(label_names = eval(parse(text = lang_titles[4])), eval(parse(text = paste0('data %>% dplyr::filter (', condition, ')')))) %>%
+                     reframe(eval(parse(text = paste0('sum(table(', std_var, '), na.rm = TRUE)'))))) %>%
+        rename(value ='eval.parse.text...paste0..sum.table....std_var.....na.rm.T.....') %>%
+        mutate(label_names = as.character(label_names), value = as.character(value))
+    }
+    
+    ### Formatting and Restricting Outputs Where Subgroup >= 100
+    
+    tab_output$value[seq(1, nrow(tab_output), 2)][as.numeric(tab_output$value[nrow(tab_output)]) <= n_cutoff] = ' - '
+    
+    return(tab_output)
+  }
+  
+  ### Generate Total Conditions
+  
+  total_conditions = c('', "age_cat=='12 or younger'", "age_cat=='13 - 15'", "age_cat=='16 or 17'",
+                       "age_cat=='13 - 15'|age_cat=='16 or 17'", "age_cat=='18 or older'",
+                       paste0("DE_GRADE =='", levels(data$DE_GRADE), "'"))
+  
+  ### Generate Total Results
+  
+  eval(parse(text = paste0('total_res = cbind(', paste0('cond_output("', total_conditions, '")[,2]', collapse = ','), ')')))
+  
+  ### Modify Total Results Table
+  
+  mod_total_res = rbind(
+    c(eval(parse(text = lang_titles[4])), '', '', eval(parse(text = lang_titles[20])), '', '', '', '',
+      eval(parse(text = lang_titles[11])), rep('', length(levels(data$DE_GRADE)) - 1)),
+    c('', '', eval(parse(text = lang_titles[4])), eval(parse(text = lang_titles[6])), '13-15', '16-17', '13-17',
+      eval(parse(text = lang_titles[9])), gsub('*.        ', '', levels(data$DE_GRADE))),
+    cond_output(total_conditions[1])[, 1] %>% bind_cols(rep(c('%', 'N'), nrow(total_res) / 2), total_res)
+  )
+  
+  ### Formatting and Localization
+  
+  if (language == 'FRENCH') {
+    mod_total_res = eval(parse(text = paste0('cbind(', paste0(gsub('\\.', ',', mod_total_res), collapse = ','), ')'))) %>%
+      as.data.frame()
+  }
+  
+  ### Create Flextable for Total Results
+  
+  flex_total_res = mod_total_res %>% flextable() %>% autofit() %>%
+    delete_part(part = "header") %>% 
+    add_header_lines(paste0(std_var, ': ', label(eval(parse(text = paste0('data$', std_var)))),'\n')) %>%
+    flextable::style(pr_t = fp_text(font.family = 'Source Sans Pro'), part = 'all') %>%
+    bold(i = 1:2) %>%
+    bg(bg = "white", i = 1, part = "header") %>%
+    hline_top(border = fp_border_default(width = 0), part = "header") %>%
+    vline_left(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    vline(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    fontsize(size = 8, part = "all") %>%
+    merge_v(j = 1) %>%
+    valign(valign = 'top') %>%
+    align(j = 3:ncol(mod_total_res), align = 'right', part = 'all') %>%
+    width(j = 1, 3, unit = "in") %>%
+    line_spacing(i = 3:nrow(mod_total_res), space = 0.7, part = "body") %>%
+    fix_border_issues() %>%
+    width(j = 4, 1, unit = "in")
+  
+  ### Generate Male Conditions
+  
+  male_conditions = c(paste0('DE_SEX == "', levels(data$DE_SEX)[1], '"'),
+                      paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & age_cat == "12 or younger"'),
+                      paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & age_cat == "13 - 15"'),
+                      paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & age_cat == "16 or 17"'),
+                      paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & (age_cat == "13 - 15"|age_cat == "16 or 17")'),
+                      paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & age_cat == "18 or older"'),
+                      paste0(paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & '), "DE_GRADE == '", levels(data$DE_GRADE), "'"))
+  
+  ### Generate Male Results
+  
+  eval(parse(text = paste0('male_res = cbind(', paste0('cond_output("', male_conditions, '")[,2]', collapse = ','), ')')))
+  
+  ### Modify Male Results Table
+  
+  mod_male_res = rbind(
+    c(eval(parse(text = lang_titles[12])), '', '', eval(parse(text = lang_titles[20])), '', '', '',
+      eval(parse(text = lang_titles[11])), rep('', length(levels(data$DE_GRADE)) - 1)),
+    c(eval(parse(text = lang_titles[16])), gsub('*.        ', '', levels(data$DE_GRADE))),
+    cond_output(male_conditions[1])[, 1] %>%
+      bind_cols(rep(c('%', 'N'), nrow(male_res) / 2), male_res)
+  )
+  
+  ### Formatting and Localization
+  
+  if (language == 'FRENCH') {
+    mod_male_res = eval(parse(text = paste0('cbind(', paste0(gsub('\\.', ',', mod_male_res), collapse = ','), ')'))) %>%
+      as.data.frame()
+  }
+  
+  ### Create Flextable for Male Results
+  
+  flex_male_res = mod_male_res %>% flextable() %>% autofit() %>%
+    delete_part(part = "header") %>% 
+    add_header_lines(paste0(std_var, ': ', label(eval(parse(text = paste0('data$', std_var)))),'\n')) %>%
+    flextable::style(pr_t = fp_text(font.family = 'Source Sans Pro'), part = 'all') %>%
+    bold(i = 1:2) %>%
+    bg(bg = "white", i = 1, part = "header") %>%
+    hline_top(border
+
+ = fp_border_default(width = 0), part = "header") %>%
+    vline_left(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    vline(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    fontsize(size = 8, part = "all") %>%
+    merge_v(j = 1) %>%
+    valign(valign = 'top') %>%
+    align(j = 3:ncol(mod_male_res), align = 'right', part = 'all') %>%
+    width(j = 1, 3, unit = "in") %>%
+    line_spacing(i = 3:nrow(mod_male_res), space = 0.7, part = "body") %>%
+    fix_border_issues() %>%
+    width(j = 4, 1, unit = "in")
+  
+  ### Generate Female Conditions
+  
+  female_conditions = c(paste0('DE_SEX == "', levels(data$DE_SEX)[2], '"'),
+                        paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & age_cat == "12 or younger"'),
+                        paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & age_cat == "13 - 15"'),
+                        paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & age_cat == "16 or 17"'),
+                        paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & (age_cat == "13 - 15"|age_cat == "16 or 17")'),
+                        paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & age_cat == "18 or older"'),
+                        paste0(paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & '), "DE_GRADE == '", levels(data$DE_GRADE), "'"))
+  
+  ### Generate Female Results
+  
+  eval(parse(text = paste0('female_res = cbind(', paste0('cond_output("', female_conditions, '")[,2]', collapse = ','), ')')))
+  
+  ### Modify Female Results Table
+  
+  mod_female_res = rbind(
+    c(eval(parse(text = lang_titles[13])), '', '', eval(parse(text = lang_titles[20])), '', '', '',
+      eval(parse(text = lang_titles[11])), rep('', length(levels(data$DE_GRADE)) - 1)),
+    c(eval(parse(text = lang_titles[17])), gsub('*.        ', '', levels(data$DE_GRADE))),
+    cond_output(female_conditions[1])[, 1] %>%
+      bind_cols(rep(c('%', 'N'), nrow(female_res) / 2), female_res)
+  )
+  
+  ### Formatting and Localization
+  
+  if (language == 'FRENCH') {
+    mod_female_res = eval(parse(text = paste0('cbind(', paste0(gsub('\\.', ',', mod_female_res), collapse = ','), ')'))) %>%
+      as.data.frame()
+  }
+  
+  ### Create Flextable for Female Results
+  
+  flex_female_res = mod_female_res %>% flextable() %>% autofit() %>%
+    delete_part(part = "header") %>% 
+    add_header_lines(paste0(std_var, ': ', label(eval(parse(text = paste0('data$', std_var)))),'\n')) %>%
+    flextable::style(pr_t = fp_text(font.family = 'Source Sans Pro'), part = 'all') %>%
+    bold(i = 1:2) %>%
+    bg(bg = "white", i = 1, part = "header") %>%
+    hline_top(border = fp_border_default(width = 0), part = "header") %>%
+    vline_left(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    vline(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    fontsize(size = 8, part = "all") %>%
+    merge_v(j = 1) %>%
+    valign(valign = 'top') %>%
+    align(j = 3:ncol(mod_female_res), align = 'right', part = 'all') %>%
+    width(j = 1, 3, unit = "in") %>%
+    line_spacing(i = 3:nrow(mod_female_res), space = 0.7, part = "body") %>%
+    fix_border_issues() %>%
+    width(j = 4, 1, unit = "in")
+  
+  ### Combine all Flextable Outputs
+  
+  eval(parse(text = paste0(std_var, '_flex_detailed = list(flex_total_res, flex_male_res, flex_female_res)')))
+}
+
+### Generate Detailed Tables
+
+# Variables for Detailed Tables (excluding certain standard variables)
+vars_for_detailed_tables = setdiff(standard_variables, c("DE_AGE", "DE_SEX", "DE_GRADE", "DB_HEIGHT", "DB_WEIGHT"))
+
+# Generate detailed tables in parallel
+detailed_tables = parallel::mclapply(vars_for_detailed_tables, detailed_tab_fn, mc.cores = num_cores, mc.preschedule = FALSE)
+
+# Unlist detailed tables
+final_detailed_tables = unlist(detailed_tables, recursive = FALSE)
+
+### Function to Combine Detailed Tables into a Final Document
+
+# Initialize document and add detailed tables with breaks
+for (i in 1:length(final_detailed_tables)) {
+  my_doc = read_docx(paste0(getwd(), '/templates/detailed_tables_template.docx'))
+  
+  if (i < length(final_detailed_tables)) {
+    my_doc = my_doc %>%
+      body_add_flextable(final_detailed_tables[[i]], width = dim(final_detailed_tables[[i]])$widths * 10 / (flextable_dim(final_detailed_tables[[i]])$widths)) %>% 
+      body_add_break()  
+  } else {
+    my_doc = my_doc %>%
+      body_add_flextable(final_detailed_tables[[i]], width = dim(final_detailed_tables[[i]])$widths * 10 / (flextable_dim(final_detailed_tables[[i]])$widths))
+  }
+  
+  print(my_doc, target = paste0(getwd(), '/temp_tables/tempdetailed', i, '.docx')) 
+}
+
+# Combine all detailed tables into one document
+combined_detailed_doc = read_docx(paste0(getwd(), '/templates/detailed_tables_template.docx'))
+combined_detailed_doc = headers_replace_text_at_bkm(combined_detailed_doc, "country", site_name)
+combined_detailed_doc = headers_replace_text_at_bkm(combined_detailed_doc, "year", paste0(lang_titles[21], ' ', survey_year))
+combined_detailed_doc = headers_replace_text_at_bkm(combined_detailed_doc, "Detailed", lang_titles[24])
+combined_detailed_doc = footers_replace_text_at_bkm(combined_detailed_doc, "ft_bmk1", ft_text1)
+combined_detailed_doc = footers_replace_text_at_bkm(combined_detailed_doc, "ft_bmk2", ft_text2)
+
+# Add each detailed table document to the combined document
+for (i in rev(1:length(final_detailed_tables))) {
+  path <- paste0(getwd(), '/temp_tables/tempdetailed', i, '.docx')
+  combined_detailed_doc <- body_add_docx(combined_detailed_doc, path, pos = "after") 
+}
+
+# Print the combined detailed tables document
+print(combined_detailed_doc, target = paste0(getwd(), '/reports/', survey_year, ' ', site_name, ' Detailed Tables.docx')) 
+```
+
+### Explanation:
+
+1. **Function Purpose:**
+   - `detailed_tab_fn` generates detailed tables for specified standard variables (`std_var`) and conditions.
+
+2. **Parameters:**
+   - `std_var`: Specifies the standard variable for which detailed tables are generated (default: `'DB_HUNGRY'`).
+
+3. **Conditional Output Function (`cond_output`):**
+   - This nested function calculates tables based on specified conditions (`condition`). It handles both filtered and unfiltered data scenarios, computes frequencies, and formats results.
+
+4. **Total Conditions and Results:**
+   - `total_conditions` defines various demographic and grade-level conditions for total results. It calculates total results using `cond_output` and formats them accordingly.
+
+5. **Male and Female Conditions and Results:**
+   - `male_conditions` and `female_conditions` define conditions based on gender and age categories. Results are computed using `cond_output` and formatted similarly to total results.
+
+6. **Flextable Creation:**
+   - Flextables (`flex_total_res`, `flex_male_res`, `flex_female_res`) are created for total, male, and female results respectively. These tables are formatted for presentation in a Word document.
+
+7. **Generating Detailed Tables:**
+   - The script generates detailed tables in parallel (`mclapply`) for each standard variable (`vars_for_detailed_tables`). Each table is processed by `detailed_tab_fn`.
+
+8. **Combining Detailed Tables into a Final Document:**
+   - Detailed tables are combined into a final Word document (`combined_detailed_doc`). Each table is added with appropriate headers, footers, and breaks between tables.
+
+This script effectively automates the generation and formatting of detailed statistical tables for reporting purposes, utilizing R's `flextable` for robust table presentation in Word documents. Adjustments can be made to `std_var`, conditions, and formatting to suit specific reporting needs.

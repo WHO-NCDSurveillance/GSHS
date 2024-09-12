@@ -1,0 +1,135 @@
+---
+output: html_document
+---
+This function effectively manages conditional document generation based on census status and language settings, ensuring accurate data representation and document formatting. Adjustments and replacements are dynamically handled to maintain document integrity and clarity based on specified templates and language conventions.
+
+### Sample Description Function
+
+```{r, eval = FALSE, echo = TRUE}
+# Define function to generate and print sample description document
+generate_sample_description <- function(is_this_census, language, survey_year, site_name, data, sample_schools, original_raw_data, long_school_sample, lang_titles) {
+  
+  # Define bookmark identifiers
+  bks = c('country', paste0('bk', 1:12))
+  
+  # Check if it's not a census scenario
+  if (is_this_census == FALSE) {
+    
+    # Prepare sample description details
+    samp_desc = c(
+      site_name,
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+      sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE),
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+      paste0(formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+      sum(sample_schools$school_part == 1, na.rm = TRUE),
+      sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE),
+      paste0(formatC(round(100 * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+      nrow(original_raw_data),
+      sum(long_school_sample$cenrol, na.rm = TRUE),
+      nrow(data),
+      paste0(
+        paste0(
+          formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+        '*',
+        paste0(formatC(round(100 * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+        ' = ',
+        paste0(formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)) * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%')
+      ),
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))], ' in ', site_name)
+    )
+    
+    # If language is French, replace dots with commas in samp_desc
+    if (language == 'FRENCH') {
+      samp_desc = gsub('\\.', ',', samp_desc)
+    }
+    
+    # Read the document template based on language
+    doc = read_docx(paste0(getwd(), '/templates/sample_description_template_', language, '.docx'))
+    
+  } else {  # For census scenario
+    
+    # Prepare sample description details for census
+    samp_desc = c(
+      site_name,
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+      paste0(formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+      sum(sample_schools$school_part == 1, na.rm = TRUE),
+      sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE),
+      paste0(formatC(round(100 * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+      nrow(original_raw_data),
+      sum(long_school_sample$cenrol, na.rm = TRUE),
+      nrow(data),
+      paste0(
+        paste0(
+          formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+        '*',
+        paste0(formatC(round(100 * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%'),
+        ' = ',
+        paste0(formatC(round(100 * (sum(sample_schools$school_part == 1, na.rm = TRUE) / sum(sample_schools$school_part == 1 | sample_schools$school_part == 0, na.rm = TRUE)) * (nrow(original_raw_data) / sum(long_school_sample$cenrol, na.rm = TRUE)), 1), format = 'f', digits = 1), '%')
+      ),
+      paste0(levels(data$DE_GRADE)[1], ' - ', levels(data$DE_GRADE)[length(levels(data$DE_GRADE))], ' in ', site_name)
+    )
+    
+    # If language is French, replace dots with commas in samp_desc
+    if (language == 'FRENCH') {
+      samp_desc = gsub('\\.', ',', samp_desc)
+    }
+    
+    # Exclude 'bk2' from bookmarks
+    bks = setdiff(bks, 'bk2')
+    
+    # Read the document template based on language for census
+    doc = read_docx(paste0(getwd(), '/templates/census_sample_description_template_', language, '.docx'))
+  }
+  
+  # Replace placeholder text "year" with survey year in the document
+  doc = headers_replace_text_at_bkm(doc, "year", paste0(lang_titles[21], ' ', survey_year))
+  
+  # Replace bookmarked placeholders in the document with samp_desc values
+  eval(parse(text = paste0('doc = body_replace_text_at_bkm(doc, "', bks, '", "', samp_desc, '")', sep = '\n')))
+  
+  # Print the updated document to a specific file location
+  print(doc, target = paste0(getwd(), '/reports/', survey_year, ' ', site_name, ' Sample Description.docx'))
+}
+```
+
+### Explanation:
+
+This Markdown document explains the R function `generate_sample_description` comprehensively:
+
+- **Function Definition (`generate_sample_description`)**:
+  - Defines a function to generate and print a sample description document based on specified parameters.
+
+- **Arguments**:
+  - `is_this_census`: A logical variable indicating if it's a census scenario (`TRUE` or `FALSE`).
+  - `language`: A string specifying the language ('ENGLISH' or 'FRENCH').
+  - `survey_year`: A numeric or string value representing the survey year.
+  - `site_name`: A string indicating the name of the survey site.
+  - `data`, `sample_schools`, `original_raw_data`, `long_school_sample`: Data frames containing relevant data for computation.
+  - `lang_titles`: A vector or list containing language-specific titles or labels.
+
+- **Function Body**:
+  - **Bookmark Definition (`bks`)**:
+    - Defines a vector containing bookmark identifiers for document manipulation.
+
+  - **Conditional Execution (`if-else`)**:
+    - Checks if `is_this_census` is `FALSE`:
+      - Constructs `samp_desc` with specific details related to non-census scenarios, including calculations and formatted percentages.
+      - If `language` is 'FRENCH', replaces dots with commas in `samp_desc`.
+      - Reads a document template (`sample_description_template_*.docx`) based on `language`.
+      
+    - If `is_this_census` is `TRUE`:
+      - Constructs `samp_desc` similarly for census scenarios, adjusting calculations and details as needed.
+      - If `language` is 'FRENCH', applies the same punctuation adjustment.
+      - Adjusts `bks` to exclude the bookmark `'bk2'`.
+      - Reads a different document template (`census_sample_description_template_*.docx`) based on `language`.
+
+  - **Document Manipulation**:
+    - Replaces placeholder text `"year"` in the document with formatted survey year (`lang_titles[21]` combined with `survey_year`).
+    - Dynamically replaces bookmarks in the document with values from `samp_desc` using `body_replace_text_at_bkm`.
+
+  - **Output**:
+    - Prints the updated document (`doc`) to a specific file location (`/reports/` directory) named `"survey_year site_name Sample Description.docx"`.
+
