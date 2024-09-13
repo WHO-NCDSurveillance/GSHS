@@ -1,0 +1,315 @@
+---
+output:
+  html_document: default
+---
+
+# 1. Reading Data
+
+## Reading Raw Data
+
+Load the raw data from an Excel file and add a `record_id` column.
+
+```{r, eval = FALSE, echo = TRUE}
+raw_data <- read_excel(paste0(getwd(), '/data inputs/raw_data.xlsx')) %>%
+  mutate(record_id = 1:n())
+```
+
+## Reading Mapping Matrix
+
+Load the mapping matrix from an Excel file.
+
+```{r, eval = FALSE, echo = TRUE}
+mapping_matrix <- read_excel(paste0(getwd(), '/data inputs/mapping_matrix.xlsx'))
+```
+
+# 2. Processing Mapping Matrix
+
+## Assigning Site-Specific Variables
+
+Reorganize the mapping matrix to extract relevant content for automated analysis. Assign labels to the response categories and check if numeric entries need conversion.
+
+```{r, eval = FALSE, echo = TRUE}
+map_dictionary <- mapping_matrix %>%
+  filter(!is.na(survey_question)) %>%
+  select(site, survey_question, var_levels) %>%
+  distinct() %>%
+  rowwise() %>%
+  mutate(
+    standard = gsub('\\s', '', strsplit(survey_question, ':')[[1]][1]),
+    revised_var_levels = gsub('.:', '', strsplit(var_levels, "[;]")),
+    standard = toupper(standard),
+    unlabelled_levels = paste0('c(', paste0('"', 
+                        sapply(strsplit(unlist(strsplit(var_levels, split = ";")),split = ":"), 
+                               function(x) gsub('\\s', '', x[1])), '"', collapse = ','), ')'),
+    unlabelled_levels = ifelse(is.na(revised_var_levels), NA, unlabelled_levels),
+    site = tolower(site)
+  )
+```
+
+# 3. Data Preparation
+
+## Assigning Standard Variable Names
+
+Assign site-specific variables to standard variable names and convert datasets with integers into letters.
+
+```{r, eval = FALSE, echo = TRUE}
+# Backup original raw data
+original_raw_data <- raw_data  
+
+# Assign site-specific variables to standard variable names
+eval(parse(text = paste0('raw_data$', map_dictionary$standard, ' = NA', sep = '\n')))
+eval(parse(text = paste0('raw_data$', map_dictionary$standard, ' = raw_data$', map_dictionary$site, sep = '\n')))
+
+# Convert all variables to character type
+raw_data <- raw_data %>% mutate(across(everything(), as.character))
+
+# Define continuous and categorical variables
+continuous_variables <- c('DB_HEIGHT', 'DB_WEIGHT')
+categorical_variables <- setdiff(map_dictionary$standard, continuous_variables)
+
+# Replace numeric entries with letters for categorical variables
+for (i in 1:length(categorical_variables)) {
+  eval(parse(text = paste0('raw_data$', categorical_variables[i], '[raw_data$', categorical_variables[i], 
+                           ' == ', 1:26, '] = "', LETTERS[1:26], '"', sep = '\n')))
+}
+```
+
+# 4. Edit Checks
+
+## Define Edit Checks
+
+Create a dataframe to define and present the checks based on the 2021 core questionnaire.
+
+```{r, eval = FALSE, echo = TRUE}
+checks_data <- data.frame(
+  var1 = c('HY_CLTEETH', 'IN_TIMESINJ', 'IN_TIMESINJ', rep('TO_TRIEDCIG', 2), rep('AL_AGE', 6), 
+           rep('DR_AGE', 3), rep('SX_EVERSEX', 4), rep('DE_AGE', 28)),
+  var1_level = c(rep('A', 3), rep('B', 2), rep('A', 9), rep('B', 4), rep(LETTERS[1:7], 4)),
+  var2 = c('HY_FLUORIDE', 'IN_TYPEINJ', 'IN_CAUSEINJ', 'TO_AGECIG', 'TO_DAYSCIG', 'AL_DAYS', 'AL_DRINKS', 
+           'AL_INAROW', 'AL_SOURCE', 'AL_TROUBLE', 'AL_DRUNK', 'DR_CANLIFE', 'DR_CAN30', 'DR_AMPHLIFE', 
+           'SX_AGE', 'SX_NUMBER', 'SX_CONDOM', 'SX_BC', rep('TO_AGECIG', 7), rep('AL_AGE', 7), 
+           rep('DR_AGE', 7), rep('SX_AGE', 7)),
+  cond2 = c('c("B","C","D")', rep('c("B","C","D","E","F","G","H")', 3), rep('c("B","C","D","E","F","G")', 3), 'c("B","C","D","E","F","G","H")', 'c("B","C","D","E","F","G")', rep('c("B","C","D","E","F")', 5), 
+            'c("B","C","D","E","F","G","H")', 'c("B","C")', 'c("B","C","D","E","F","G","H")', 
+            rep(c('c("E","F","G","H")', 'c("F","G","H")', 'c("F","G","H")', 'c("G","H")', 'c("G","H")', 
+                  'c("H")', 'c("H")'), 4)),
+  age_logical = c(rep(FALSE, 18), rep(TRUE, 28))
+) %>%
+  mutate(
+    var1_check = eval(parse(text = paste0('c(', paste0('names(table(!is.null(raw_data$', var1, ')))', 
+                                                       collapse = ','), ')'))),
+    var2_check = eval(parse(text = paste0('c(', paste0('names(table(!is.null(raw_data$', var2, ')))', 
+                                                       collapse = ','), ')')))
+  ) %>%
+  filter(var1_check == TRUE & var2_check == TRUE)
+```
+
+## Apply Edit Checks
+
+Apply the defined edit checks to the raw data.
+
+```{r, eval = FALSE, echo = TRUE}
+if (nrow(checks_data) > 0) {
+  dup_var_names <- setdiff(unique(checks_data$var1), "DE_AGE")
+  eval(parse(text = paste0('raw_data$dup_', dup_var_names, ' = raw_data$', dup_var_names, sep = '\n')))
+  
+  for (i in 1:length(checks_data$var1)) {
+    if (checks_data$age_logical[i] == TRUE) {
+      eval(parse(text = paste0('raw_data$', checks_data$var2[i], '[raw_data$', checks_data$var1[i], ' == "', checks_data$var1_level[i], '" & (', paste0('raw_data$', checks_data$var2[i], ' == "', eval(parse(text = 
+                                                                                                                                                               checks_data$cond2[i])), '"', collapse = '|'), ')] = NA')))
+    } else {
+      eval(parse(text = paste0('raw_data$', checks_data$var1[i], '[raw_data$', 
+                               checks_data$var1[i], ' == "', checks_data$var1_level[i], '" & (', 
+                               paste0('raw_data$', checks_data$var2[i], ' == "', 
+                                      eval(parse(text = checks_data$cond2[i])), '"', collapse = '|'), ')] = NA')))
+      eval(parse(text = paste0('raw_data$', checks_data$var2[i], '[raw_data$dup_', checks_data$var1[i], ' == "', checks_data$var1_level[i], '" & (', paste0('raw_data$', checks_data$var2[i], ' == "', 
+                                                                                                                                                            eval(parse(text = checks_data$cond2[i])), '"', collapse = '|'), ')] = NA')))
+    }
+  }
+  raw_data <- raw_data %>% select(-all_of(paste0('dup_', dup_var_names)))
+}
+```
+
+# 5. Additional Data Processing
+
+## Set Out-of-Range Values to Missing
+
+Define the mapping matrix with only categorical variables and set out-of-range values to missing.
+
+```{r, eval = FALSE, echo = TRUE}
+map_categorical <- map_dictionary %>% filter(standard != 'DB_HEIGHT' & standard != 'DB_WEIGHT')
+
+eval(parse(text = paste0('raw_data$', map_categorical$standard, '[!(raw_data$', map_categorical$standard, '%in%', map_categorical$unlabelled_levels, ')] = NA', sep = '\n')))
+```
+
+## Generate New Age and Sex Variables
+
+Generate new age and sex variables for BMI z-score computation.
+
+```{r, eval = FALSE, echo = TRUE}
+eval(parse(text = paste0('raw_data$', c('AGE_years', 'age_cat', 'AGE_new', 'SEX_new'), ' = NA')))
+
+age_levels <- map_dictionary$revised_var_levels[map_dictionary$standard == "DE_AGE"]
+numeric_age <- as.numeric(gsub(".*?([0-9]+).*", "\\1", eval(parse(text = age_levels))))
+eval(parse(text = paste0('raw_data$AGE_years[raw_data$DE_AGE == "', LETTERS[1:length(numeric_age)], '"] = ', 
+                         numeric_age, sep = '\n')))
+
+raw_data <- raw_data %>%
+  mutate(
+    age_cat = case_when(
+      AGE_years == 11 | AGE_years == 12 ~ 1,
+      AGE_years == 13 | AGE_years == 14 | AGE_years == 15 ~ 2,
+      AGE_years == 16 | AGE_years == 17 ~ 3,
+      AGE_years ==
+
+ 18 | AGE_years == 19 ~ 4,
+      TRUE ~ NA_real_
+    ),
+    AGE_new = case_when(
+      !is.na(AGE_years) ~ if_else(AGE_years >= 10 & AGE_years <= 19, AGE_years, NA_real_)
+    )
+  )
+
+sex_levels <- map_dictionary$revised_var_levels[map_dictionary$standard == "DE_SEX"]
+sex_levels <- eval(parse(text = sex_levels))
+eval(parse(text = paste0('raw_data$SEX_new[raw_data$DE_SEX == "', LETTERS[1:length(sex_levels)], '"] = "', 
+                         sex_levels, '"', sep = '\n')))
+```
+
+### Numeric Conversions for Categorical and Numeric Variables
+
+```r
+# Numeric conversions for categorical and numeric variables
+eval(parse(text=paste0('raw_data$',continuous_variables,'= as.numeric(raw_data$',continuous_variables,')', sep='\n')))
+```
+
+- **Explanation**:
+  - This section converts specified variables (`continuous_variables`) in `raw_data` from their current data type (likely character or factor) to numeric using `as.numeric()` function. This is useful for numerical operations or analyses that require numeric input.
+
+### Applying WHO BMI for Age Standards to Generate BMI Z-Scores
+
+```r
+# Applying WHO BMI for age standards to generate BMI z-scores
+if (compute_BMI_indicators == TRUE) {
+  raw_data <- addWGSR(raw_data, sex = "SEX_new", firstPart = "DB_WEIGHT", 
+                      secondPart = "DB_HEIGHT", thirdPart = "AGE_new", index = "bfa", 
+                      output = "bmiAgeZ", digits = 4) %>% 
+    mutate(
+      bmiAgeZ = ifelse((bmiAgeZ < (-5) | bmiAgeZ > 5), NA, bmiAgeZ),
+      BMI_status = case_when(
+        bmiAgeZ < (-2) ~ 1,
+        bmiAgeZ >= (-2) & bmiAgeZ < 1 ~ 2,
+        bmiAgeZ >= 1 & bmiAgeZ < 2 ~ 3,
+        bmiAgeZ >=2 ~ 4
+      ),
+      BMI_status = factor(BMI_status, levels = 1:4, labels = c('Underweight','Normal','Overweight','Obese'))
+    )
+  
+  # Update mapping dictionary to reflect numerators and site variable for DB_UNDERWT, DB_OVERWT, and DB_OBESE
+  updated_matrix <- mapping_matrix %>%
+    mutate(
+      numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'", numerator),
+      numerator = ifelse(bin_standard =='DB_OVERWT', "c('Overweight','Obese')", numerator),
+      numerator = ifelse(bin_standard =='DB_OBESE', "'Obese'", numerator),
+      site = ifelse(bin_standard %in% c('DB_UNDERWT','DB_OVERWT','DB_OBESE'), 'BMI_status', site)
+    )
+} else {
+  updated_matrix <- mapping_matrix %>%
+    filter(!(bin_standard %in% c('DB_HEIGHT', 'DB_WEIGHT', 'DB_UNDERWT', 'DB_OVERWT', 'DB_OBESE')))
+  
+  map_dictionary <- map_dictionary %>%
+    filter(!(standard %in% c('DB_HEIGHT', 'DB_WEIGHT')))
+}
+```
+
+- **Explanation**:
+  - **BMI Calculation**: If `compute_BMI_indicators` is `TRUE`, it calculates BMI z-scores (`bmiAgeZ`) using WHO standards (`addWGSR` function). It cleans BMI-Age Z-scores based on defined cut-offs and categorizes them into `BMI_status`.
+  - **Mapping Matrix Update**: Updates `mapping_matrix` to reflect categorization (`numerator`) and site variables (`site`) for BMI-related standards (`DB_UNDERWT`, `DB_OVERWT`, `DB_OBESE`).
+
+### Variable Completeness Check
+
+```r
+# Variable completeness: Data are checked to ensure that each question has valid data for at least 60% of all students once all other edits have been completed.
+# If less than 60% of students have a valid response for a question, then that question is set to missing for all students.
+excl_variables <- setdiff(names(raw_data), grep('q|height|weight', names(raw_data), v = TRUE))
+
+completeness <- raw_data %>%
+  dplyr::select(-all_of(excl_variables)) %>%
+  summarise(across(everything(), ~ mean(!is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "completeness")
+```
+
+- **Explanation**:
+  - Calculates completeness for each variable in `raw_data`, excluding specific variables (`excl_variables`).
+  - Determines the proportion of non-missing values (`completeness`) and pivots the data into long format for easier analysis.
+
+### Checking for Similar Responses
+
+```r
+# Define a function to check for similar responses
+# Check for too many similar responses in a row: response repeated 15 or more times, except for A
+too_many_similar_responses <- function(response, threshold = 15) {
+  response <- gsub("A", "", response)  # Remove 'A' from response
+  response <- paste(response, collapse = "")  # Convert vector to single string
+  matches <- str_match_all(response, "(.)\\1*")[[1]]  # Find all matches of repeated characters
+  max_repeat <- max(nchar(matches[,1]), na.rm = TRUE)  # Get the maximum length of repeated characters
+  max_repeat >= threshold
+}
+
+# Apply the function to each row and filter out rows with too many similar responses
+raw_data <- raw_data %>% 
+  mutate(many_similar = apply(.[,-1], 1, too_many_similar_responses)) %>% 
+  dplyr::filter(many_similar == FALSE)
+```
+
+- **Explanation**:
+  - Defines a function (`too_many_similar_responses`) to detect excessively repeated responses (excluding 'A') in each row of `raw_data`.
+  - Applies this function across all rows (`apply()`) and filters out rows where similar responses exceed the threshold (`threshold`).
+
+### Dropping Variables with <60% Response Rate
+
+```r
+# Dropping variables with <60% response rate
+vars_with_less60 <- (completeness %>%
+  dplyr::filter(completeness < 0.6 & variable != "many_similar"))$variable
+
+map_dictionary <- map_dictionary %>%
+  dplyr::filter(!(site %in% vars_with_less60))
+```
+
+- **Explanation**:
+  - Identifies variables (`vars_with_less60`) with less than 60% completeness (`completeness`) and updates `map_dictionary` to exclude these variables from further analysis or mapping.
+
+### Ensuring Minimum Valid Responses
+
+```r
+# Ensuring each student has at least 20 valid responses
+excl_variables <- setdiff(names(raw_data), grep('q|height|weight', names(raw_data), v = TRUE))
+
+non_missing_counts_row <- raw_data %>%
+  dplyr::select(-all_of(excl_variables)) %>%
+  mutate(across(everything(), as.character)) %>%
+  rowwise() %>%
+  mutate(non_missing_count = sum(!is.na(c_across(everything())))) %>%
+  dplyr::select(non_missing_count)
+
+# Filter out records with fewer than 20 valid responses
+raw_data <- cbind(raw_data, non_missing_counts_row) %>% 
+  dplyr::filter(non_missing_count >= 20) %>% 
+  dplyr::select(-non_missing_count) %>%
+  as.data.frame()
+```
+
+- **Explanation**:
+  - Calculates the number of valid responses (`non_missing_count`) for each student in `raw_data`, excluding specific variables (`excl_variables`).
+  - Filters out records where the number of valid responses is less than 20, ensuring data quality.
+
+### Cleaning and Standardizing Variables
+
+```r
+# Cleaned and standardized variables
+eval(parse(text=paste0('raw_data$', map_dictionary$site, ' = raw_data$', map_dictionary$standard, sep = '\n')))
+```
+
+- **Explanation**:
+  - This section updates `raw_data` to ensure that site-specific variables (`map_dictionary$site`) are cleaned and standardized according to standard variables (`map_dictionary$standard`), aligning data for consistency.

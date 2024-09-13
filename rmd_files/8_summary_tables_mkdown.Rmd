@@ -1,0 +1,222 @@
+---
+output: html_document
+---
+
+## Calculate Degrees of Freedom
+
+```{r, eval = FALSE, echo = TRUE}
+# Calculate degrees of freedom for survey design
+degrees_freedom <- degf(svy_data3) - 1
+```
+
+**Explanation:**
+- `degf(svy_data3)` calculates the degrees of freedom for the survey design `svy_data3`. Subtracting 1 (`- 1`) adjusts for the estimation of population parameters from sample data.
+
+## Function: summary_table_fn
+
+```{r, eval = FALSE, echo = TRUE}
+# Function to generate summary tables for a specified variable
+summary_table_fn <- function(variable = 'DB_B_HUNGRY') {
+  
+  # Get the number variable from language titles
+  num_var <- eval(parse(text = lang_titles[1]))[1]
+  
+  # Construct formula based on variable and number condition
+  eval(parse(text = paste0('formula = ~I(', variable, '=="', num_var, '")')))
+  
+  # Define condition to filter non-missing values
+  cond1 <- paste0('!is.na(', variable, ')')
+  
+  # Function to estimate confidence interval proportion
+  ciprop_function <- function(cond_subset = 'DE_SEX==""') {
+    # Number of participants and estimated CI
+    if (cond_subset != '') {
+      n_participants <- data %>%
+        filter(eval(parse(text = paste0(cond_subset, '&', cond1)))) %>%
+        summarise(n()) %>%
+        as.numeric()
+      
+      if (n_participants >= n_cutoff) {
+        est_ciprop <- svyciprop(formula, design = subset(svy_data3, eval(parse(text = cond_subset))), method = "lo", df = degrees_freedom)
+      } else {
+        est_ciprop <- '-'
+      }
+    } else {
+      n_participants <- data %>%
+        filter(eval(parse(text = cond1))) %>%
+        summarise(n()) %>%
+        as.numeric()
+      
+      if (n_participants >= n_cutoff) {
+        est_ciprop <- svyciprop(formula, design = subset(svy_data3, eval(parse(text = cond1))), method = "lo", df = degrees_freedom)
+      } else {
+        est_ciprop <- '-'
+      }
+    }
+    
+    # Format proportion and confidence interval
+    total_est <- ifelse(n_participants >= n_cutoff, formatC(round(as.vector(est_ciprop) * 100, 1), format = 'f', digits = 1), '-')
+    est_ci <- ifelse(n_participants >= n_cutoff, paste0('(', formatC(round((as.numeric(attr(est_ciprop, "ci")[1])) * 100, 1), format = 'f', digits = 1), ' - ', formatC(round(100 * as.numeric(attr(est_ciprop, "ci")[2]), 1), format = 'f', digits = 1), ')'), '-')
+    
+    # Combine results into a data frame
+    result <- bind_cols(total_est, est_ci, n_participants) %>% data.frame()
+    colnames(result) <- c('Percent', 'CI', 'N')
+    
+    return(result)
+  }
+  
+  ### Call ciprop_function for different subsets
+  
+  # Define age and sex category levels
+  age_cat_levels <- paste0("age_cat == '", levels(data$age_cat), "'")
+  sex_cat_levels <- paste0("DE_SEX == '", levels(data$DE_SEX), "'")  # Sex
+  
+  # Define class/grade category levels
+  class_cat_levels <- paste0("DE_GRADE == '", levels(data$DE_GRADE), "'")  # Class/grade
+  
+  # Define male and female age category levels
+  male_age_cat_levels <- paste0("DE_SEX == '", levels(data$DE_SEX)[1], "' & ", "age_cat == '", levels(data$age_cat), "'")
+  female_age_cat_levels <- paste0("DE_SEX == '", levels(data$DE_SEX)[2], "' & ", "age_cat == '", levels(data$age_cat), "'")
+  
+  # Define male and female class/grade category levels
+  male_class_cat_levels <- paste0("DE_SEX == '", levels(data$DE_SEX)[1], "' & ", "DE_GRADE == '", levels(data$DE_GRADE), "'")
+  female_class_cat_levels <- paste0("DE_SEX == '", levels(data$DE_SEX)[2], "' & ", "DE_GRADE == '", levels(data$DE_GRADE), "'")
+  
+  # Define class level conditions
+  class_conditions <- NULL
+  for (k in 1:length(levels(data$DE_GRADE))) {
+    class_level_cond <- c(class_cat_levels[k], male_class_cat_levels[k], female_class_cat_levels[k])
+    class_conditions <- c(class_conditions, class_level_cond)
+  }
+  
+  # Define all conditions
+  all_conditions <- c('', sex_cat_levels,
+                     age_cat_levels[1], male_age_cat_levels[1], female_age_cat_levels[1],
+                     age_cat_levels[2], male_age_cat_levels[2], female_age_cat_levels[2],
+                     age_cat_levels[3], male_age_cat_levels[3], female_age_cat_levels[3],
+                     '(age_cat == "13 - 15" | age_cat == "16 or 17")', paste0('DE_SEX == "', levels(data$DE_SEX)[1], '" & (age_cat == "13 - 15" | age_cat == "16 or 17")'),
+                     paste0('DE_SEX == "', levels(data$DE_SEX)[2], '" & (age_cat == "13 - 15" | age_cat == "16 or 17")'),
+                     age_cat_levels[4], male_age_cat_levels[4], female_age_cat_levels[4],
+                     class_conditions)
+  
+  # Apply ciprop_function in parallel
+  list_point_plus_ci_est <- parallel::mclapply(all_conditions, ciprop_function, mc.cores = num_cores, mc.preschedule = FALSE)
+  
+  # Combine all results into a matrix
+  all_point_plus_ci_est <- do.call('cbind', list_point_plus_ci_est)
+  
+  # Determine lower limits for each section in the output table
+  lower_limits <- c()
+  for (x in 1:length(all_point_plus_ci_est)) {
+    if (x %% 9 == 0 & (x > 45 & x < length(all_point_plus_ci_est))) {
+      lower_limits <- c(lower_limits, x + 1)
+    } else {
+      NULL
+    }
+  }
+  
+  # Create class table with labels
+  eval(parse(text = paste0('class_tab = rbind(', paste0('c("', levels(data$DE_GRADE), '", all_point_plus_ci_est[', lower_limits, ':', lower_limits + 8, '])', collapse = ','), ')')))
+  
+  # Get text outputs from language titles
+  text_output <- eval(parse(text = lang_titles[18]))
+  
+  # Construct output table
+  output_table <- rbind(c(text_output[1], all_point_plus_ci_est[1:9]),
+                        c(text_output[2], rep('', 9)),
+                        c(text_output[3], all_point_plus_ci_est[10:18]),
+                        c(text_output[4], all_point_plus_ci_est[19:27]),
+                        c(text_output[5], all_point_plus_ci_est[28:36]),
+                        c(text_output[6], all_point_plus_ci_est[37:45]),
+                        c(text_output[7], all_point_plus_ci_est[46:54]),
+                        c(text_output[8], rep('', 9)),
+                        class_tab)
+  
+  # Prepare for flextable creation
+  tab_names <- colnames(output_table)
+  table_title <- paste0(variable, ': ', label(eval(parse(text = paste0('data$', variable)))))
+
+  # Create formatted flextable object
+  table_output <- output_table %>%
+    as.data.frame() %>%
+    mutate(across(everything(), as.character))  # Ensure all columns are character
+  
+  # Handle language-specific formatting
+  if (language == 'FRENCH') {
+    table_output <- eval(parse(text = paste0('cbind(', paste0(gsub('\\.', ',', table_output), collapse = ','), ')'))) %>%
+      as.data.frame()
+  } else {
+    NULL
+  }
+  
+  # Generate and format flextable
+  table_output <- table_output %>%
+    flextable() %>%
+    autofit() %>%
+    delete_part(part = "header") %>%
+    add_header_lines(table_title) %>%
+    flextable::style(pr_t = fp_text(font.family = 'Source Sans Pro'), part = 'all') %>%
+    bold(i = c(1:2, 4, 10)) %>%
+    bg(bg = "white", i = 1, part = "header") %>%
+    hline_top(border = fp_border_default(width = 0), part = "header") %>%
+    vline_left(i = 1, border = fp_border_default(width = 0), part = "header") %>%
+    vline(i = 
+
+1, border = fp_border_default(width = 0), part = "header") %>%
+    align(align = "center", j = 2:10, part = "all") %>%
+    width(j = 1:10, 3, unit = "in") %>%
+    fontsize(size = 9, part = "all")
+  
+  return(table_output)
+}
+```
+
+**Explanation:**
+- The `summary_table_fn` function calculates the proportion and confidence interval for a specified variable across various demographic conditions (`age`, `sex`, `class`). It utilizes parallel processing (`mclapply`) for efficiency.
+- **Degrees of Freedom Calculation:** `degrees_of_freedom <- degf(svy_data3) - 1` adjusts degrees of freedom for survey weights.
+  
+## Generate Summary Tables
+
+```{r, eval = FALSE, echo = TRUE}
+# Generate summary tables for all new variables in parallel
+all_summary_tables <- parallel::mclapply(new_variables, summary_table_fn, mc.cores = num_cores, mc.preschedule = FALSE)
+
+# Combine each summary table into separate Word documents
+for (i in 1:length(new_variables)) {
+  my_doc <- read_docx(paste0(getwd(), '/templates/Table_summary_template.docx'))
+  summary_tables <- all_summary_tables[[i]]
+  
+  if (i < length(new_variables)) {
+    my_doc <- my_doc %>%
+      body_add_flextable(width(summary_tables, width = dim(summary_tables)$widths * 10 / (flextable_dim(summary_tables)$widths)), pos = 'on') %>%
+      body_add_break()   
+  } else {
+    my_doc <- my_doc %>%
+      body_add_flextable(width(summary_tables, width = dim(summary_tables)$widths * 10 / (flextable_dim(summary_tables)$widths)), pos = 'on') 
+  }
+  
+  # Print each summary table document
+  print(my_doc, target = paste0(getwd(), '/temp_tables/tempsum', i, '.docx')) 
+}
+
+# Combine all generated summary tables into a single document
+combined_sum_doc <- read_docx(paste0(getwd(), '/templates/Table_summary_template.docx'))
+combined_sum_doc <- headers_replace_text_at_bkm(combined_sum_doc, "country", site_name)
+combined_sum_doc <- headers_replace_text_at_bkm(combined_sum_doc, "year", paste0(lang_titles[21], ' ', survey_year))
+combined_sum_doc <- headers_replace_text_at_bkm(combined_sum_doc, "Summary", lang_titles[25])
+combined_sum_doc <- footers_replace_text_at_bkm(combined_sum_doc, "ft_bmk1", ft_text1)
+combined_sum_doc <- footers_replace_text_at_bkm(combined_sum_doc, "ft_bmk2", ft_text2)
+
+for (i in 1:length(new_variables)) {
+  path <- paste0(getwd(), '/temp_tables/tempsum', i, '.docx')
+  combined_sum_doc <- body_add_docx(combined_sum_doc, path, pos = "after") 
+}
+
+# Print the combined summary tables document
+print(combined_sum_doc, target = paste0(getwd(), '/reports/', survey_year, ' ', site_name, ' Summary Tables.docx')) 
+```
+
+**Explanation:**
+- **Generate Summary Tables:** The script generates formatted summary tables for each variable in `new_variables`. It utilizes parallel processing to improve performance (`mclapply`). Each table is embedded into a Word document template (`Table_summary_template.docx`), which is then combined into a single report (`Summary Tables.docx`) after inserting headers and footers with appropriate text and metadata.
+
+
