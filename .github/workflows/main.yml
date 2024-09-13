@@ -21,6 +21,9 @@ jobs:
         Rscript -e 'install.packages(c("shiny", "rsconnect"))'
 
     - name: Deploy to shinyapps.io
+      env:
+        SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
+        SHINYAPPS_SECRET: ${{ secrets.SHINYAPPS_SECRET }}
       run: |
-        Rscript -e 'rsconnect::setAccountInfo(name="worldhealthorg", token="03F90F4E078FBB4790D4DFF722FC514B", secret="TdfFdKbZBZi0B3bX+kbQQYIh3zrwEe4pC4hbUHg9")'
+        Rscript -e 'rsconnect::setAccountInfo(name="worldhealthorg", token=Sys.getenv("SHINYAPPS_TOKEN"), secret=Sys.getenv("SHINYAPPS_SECRET"))'
         Rscript -e 'rsconnect::deployApp(appFiles=c("app.R"), appName="GSHS", account="worldhealthorg")'
