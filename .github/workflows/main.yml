@@ -24,7 +24,7 @@ jobs:
 
     - name: Install rsconnect using remotes and GitHub PAT
       env:
-        GITHUB_PAT: ${{ secrets.SEC_PAT }}
+        SEC_PAT: ${{ secrets.SEC_PAT }}
       run: |
         Rscript -e 'remotes::install_github("rstudio/rsconnect", auth_token=Sys.getenv("GITHUB_PAT"))'
 
