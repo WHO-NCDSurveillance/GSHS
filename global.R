@@ -197,11 +197,11 @@ eval(parse(text = paste0('file.copy(from = "',rstudio_interface_folders,'", to =
 interface_rstudio = dir('rmd_files/rstudio_interface', full.names = TRUE)
 zip(zipfile = 'rmd_files/rstudio_interface', files = interface_rstudio)
 }
-
-
 ######Commit test###
 
 
 
 
 
+=======
+>>>>>>> 0156527d395c7fe675dfb05e657f757485f4a556
