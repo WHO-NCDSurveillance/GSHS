@@ -45,7 +45,7 @@ server <- function(input, output, session) {
                          box(radioButtons("weighted_report", label = "Will the analysis be weighted?",
                                           choices = c("Yes", "No"),selected = "Yes", inline = TRUE), width = 4)),
                 fluidRow(radioButtons("report_language", label = "Select reporting language",
-                                 choices = c("English", "French",'Spanish','Russian'),selected = "English", inline = TRUE), width = 4),
+                                 choices = c("English", "French",'Chinese','Russian'),selected = "English", inline = TRUE), width = 4),
                 #uiOutput('lang_otherUI'),
                 fluidRow(box(width = 12,height = 25, title = 'Data Uploads',background = 'light-blue'),align = "center"),
                 uiOutput('uploadUI'),
