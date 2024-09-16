@@ -73,7 +73,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   } else{}
   
   adj_no_qnaires = no_qnaires/(st_resprate*permission_rate*sch_resprate)
-  adj_no_schools = ifelse(all_schools=='No',no_schools/sch_resprate,nrow(datum)) %>% round()
+  adj_no_schools = ifelse(all_schools=='No',ceiling(no_schools/sch_resprate),nrow(datum)) %>% round()
   # Calculate the overall sampling fraction
   total_enrolment = sum(datum$enrolment, na.rm = T) 
   overall_sampling_fraction = (adj_no_qnaires) / sum(datum$enrolment, na.rm = T)
