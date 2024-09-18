@@ -26,7 +26,7 @@ jobs:
       env:
         SEC_PAT: ${{ secrets.SEC_PAT }}
       run: |
-        Rscript -e 'remotes::install_github("rstudio/rsconnect", auth_token=Sys.getenv("GITHUB_PAT"))'
+        Rscript -e 'remotes::install_github("rstudio/rsconnect", auth_token=Sys.getenv("SEC_PAT"))'
 
     - name: Verify installed packages
       run: |
