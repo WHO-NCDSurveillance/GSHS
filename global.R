@@ -55,7 +55,7 @@ library(writexl)
 library(openxlsx)
 library(readr)
 
-
+options(rsconnect.packrat = TRUE)
 options(shiny.maxRequestSize = 10 * 1024^2)
 options(survey.lonely.psu="certainty")
 options(survey.adjust.domain.lonely=TRUE)
