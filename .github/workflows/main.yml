@@ -3,7 +3,7 @@ name: Deploy Shiny App
 on:
   push:
     branches:
-      - master  # 
+      - master  # Trigger deployment on push to master branch
 
 jobs:
   deploy:
@@ -22,11 +22,9 @@ jobs:
       run: |
         Rscript -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
 
-    - name: Install rsconnect using remotes and GitHub PAT
-      env:
-        SEC_PAT: ${{ secrets.SEC_PAT }}
+    - name: Install rsconnect from CRAN
       run: |
-        Rscript -e 'remotes::install_github("rstudio/rsconnect", auth_token=Sys.getenv("SEC_PAT"))'
+        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org")'
 
     - name: Verify installed packages
       run: |
