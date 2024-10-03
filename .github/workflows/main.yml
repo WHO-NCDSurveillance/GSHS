@@ -24,7 +24,8 @@ jobs:
 
     - name: Install rsconnect from CRAN with logs
       run: |
-        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org", dependencies = TRUE)'
+        Rscript -e 'install.packages("Biobase")'
+        Rscript -e 'install.packages("rsconnect")'
         Rscript -e 'print("rsconnect successfully installed.")'
 
     - name: Verify rsconnect is installed
