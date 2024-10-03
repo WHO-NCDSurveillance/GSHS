@@ -26,10 +26,10 @@ jobs:
       run: |
         Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org")'
 
-    - name: Verify installed packages
+    - name: Verify installed packages and check for rsconnect
       run: |
-        Rscript -e 'installed.packages()'  # List installed packages to check if rsconnect is installed
-
+        Rscript -e 'if (!require("rsconnect")) {stop("rsconnect package not found")}'
+        
     - name: Deploy to shinyapps.io
       env:
         SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
