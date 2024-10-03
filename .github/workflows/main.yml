@@ -23,13 +23,10 @@ jobs:
       with:
         r-version: '4.2.1'  # Specify the version of R
 
-    - name: Install remotes to handle GitHub installations
+    - name: Install renv and restore packages
       run: |
-        Rscript -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
-
-    - name: Install required packages
-      run: |
-       Rscript -e 'install.packages(c("haven","shinythemes","tidyverse","shiny","shinydashboard","shinyWidgets","lubridate","stringr","readxl","plotly","zoo","gridExtra","cowplot","anytime","data.table","DT","shinyjs","flextable","officer","ggpubr","EpiReport","xlsx","zscorer","Hmisc","survey","questionr","writexl","openxlsx","readr"), repos="https://cloud.r-project.org")'
+        Rscript -e 'install.packages("renv", repos="https://cloud.r-project.org")'
+        Rscript -e 'renv::restore()'  # Restore packages from renv.lock
 
     - name: Install rsconnect from CRAN with logs
       run: |
