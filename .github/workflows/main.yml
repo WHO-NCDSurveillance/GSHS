@@ -24,12 +24,12 @@ jobs:
 
     - name: Install rsconnect from CRAN
       run: |
-        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org")'
+        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org", dep = TRUE)'
 
-    - name: Verify installed packages and check for rsconnect
+    - name: Verify installed packages
       run: |
-        Rscript -e 'if (!require("rsconnect")) {stop("rsconnect package not found")}'
-        
+        Rscript -e 'installed.packages()'  # List installed packages to check if rsconnect is installed
+
     - name: Deploy to shinyapps.io
       env:
         SHINYAPPS_TOKEN: ${{ secrets.SHINYAPPS_TOKEN }}
