@@ -1,4 +1,4 @@
-####NOTE: Before deployment, please delete offline_shiny, offline_shiny.zip, rstudio_interface, and rstudio_interface.zip from rmd_files folder
+#####NOTE: Before deployment, please delete offline_shiny, offline_shiny.zip, rstudio_interface, and rstudio_interface.zip from rmd_files folder
 ###If running rstudio interface, uncomment lines 3 - 26 and comment lines 28 - 56
 # all.packages <- c(
 #   'haven', 'shinythemes', 'tidyverse', 'shiny', 'shinydashboard',
