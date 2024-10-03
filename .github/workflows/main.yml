@@ -15,7 +15,7 @@ jobs:
 
     - name: Install system dependencies
       run: |
-        sudo apt-get update
+        #sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev libssl-dev
 
     - name: Set up R
@@ -43,4 +43,4 @@ jobs:
       run: |
         Rscript -e 'library(rsconnect)'  # Ensure rsconnect is loaded
         Rscript -e 'rsconnect::setAccountInfo(name="worldhealthorg", token=Sys.getenv("SHINYAPPS_TOKEN"), secret=Sys.getenv("SHINYAPPS_SECRET"))'
-        Rscript -e 'rsconnect::deployApp(appFiles=c("app.R"), appName="GSHS", account="worldhealthorg")'
+        Rscript -e 'rsconnect::deployApp(appFiles=".", appName="GSHS", account="worldhealthorg")'
