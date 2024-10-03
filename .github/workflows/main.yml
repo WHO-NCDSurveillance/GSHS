@@ -13,19 +13,19 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v3
 
-    #- name: Install system dependencies
-    #  run: |
-        #sudo apt-get update
-    #    sudo apt-get install -y libcurl4-openssl-dev libssl-dev
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libcurl4-openssl-dev libssl-dev
 
-    #- name: Set up R
-     # uses: r-lib/actions/setup-r@v2
-     # with:
-     #   r-version: '4.2.1'  # Specify the version of R
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+      with:
+        r-version: '4.2.1'  # Specify the version of R
 
-    #- name: Install remotes to handle GitHub installations
-     # run: |
-     #   Rscript -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
+    - name: Install remotes to handle GitHub installations
+      run: |
+        Rscript -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
 
     - name: Install rsconnect from CRAN with logs
       run: |
