@@ -22,13 +22,14 @@ jobs:
       run: |
         Rscript -e 'install.packages("remotes", repos="https://cloud.r-project.org")'
 
-    - name: Install rsconnect from CRAN
+    - name: Install rsconnect from CRAN with logs
       run: |
-        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org", dep = TRUE)'
+        Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org", dependencies = TRUE)'
+        Rscript -e 'print("rsconnect successfully installed.")'
 
-    - name: Verify installed packages
+    - name: Verify rsconnect is installed
       run: |
-        Rscript -e 'installed.packages()'  # List installed packages to check if rsconnect is installed
+        Rscript -e 'if (!"rsconnect" %in% installed.packages()) stop("rsconnect not installed")'
 
     - name: Deploy to shinyapps.io
       env:
