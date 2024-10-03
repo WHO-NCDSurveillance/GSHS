@@ -1,5 +1,5 @@
 ###Sample Description
-bks = c('country',paste0('bk',1:12))
+bks = c('country',paste0('bk',1:13))
 original_raw_data = original_data
 
 ###
@@ -20,7 +20,8 @@ samp_desc = c(site_name,
                      paste0(formatC(round(100*(nrow(original_raw_data)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),' = ',
                      paste0(formatC(round(100*(sum(sample_schools$school_part==1, na.rm = T)/sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T))*
                                             (nrow(original_raw_data)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%')),
-              paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))], ' in ',site_name))
+              paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+              paste0(site_name))
 ##
 if (language == 'FRENCH'){
   samp_desc = gsub('\\.',',',samp_desc)
@@ -46,7 +47,8 @@ if(weighted_reporting=='Yes'){
                        paste0(formatC(round(100*(nrow(original_raw_data)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),' = ',
                        paste0(formatC(round(100*(sum(sample_schools$school_part==1, na.rm = T)/sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T))*
                                               (nrow(original_raw_data)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%')),
-                paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))], ' in ',site_name))
+                paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
+                paste0(site_name))
   
   if (language == 'FRENCH'){
     samp_desc = gsub('\\.',',',samp_desc)

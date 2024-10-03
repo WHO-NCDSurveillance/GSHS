@@ -348,7 +348,7 @@ if(double_draw == 'Yes')
   i = NULL
   for(i in 1:nrow(final_sample))
   {
-    doc = read_docx(paste0(getwd(),'/templates/template_double_draw.docx'))
+    doc = read_docx(paste0(getwd(),'/templates/',sample_language,'/template_double_draw.docx'))
     all_outputs = c(site_name,as.character(final_sample[i,'school']),
                     as.character(final_sample[i,'Field_ID']),as.character(final_sample[i,'GSHS']),
                     as.character(final_sample[i,'GYTS']),
@@ -363,7 +363,7 @@ if(double_draw == 'Yes')
   i = NULL
   for(i in 1:nrow(final_sample))
   {
-    doc = read_docx(paste0(getwd(),'/templates/template_single_draw.docx'))
+    doc = read_docx(paste0(getwd(),'/templates/',sample_language,'/template_single_draw.docx'))
     all_outputs = c(site_name,as.character(final_sample[i,'school']),
                     as.character(final_sample[i,'Field_ID']),
                     as.character(final_sample[i,'classes']),

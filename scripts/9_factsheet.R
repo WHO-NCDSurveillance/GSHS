@@ -151,7 +151,7 @@ doc = headers_replace_text_at_bkm(doc,"year",survey_year)
 #
 if(is_this_census == 'No')
 {
-additional_text = c(paste0(survey_year,' ',site_name),
+additional_text = c(survey_year,
                     paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
                     paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
                     site_name,
@@ -163,12 +163,12 @@ additional_text = c(paste0(survey_year,' ',site_name),
                     paste0(formatC(round(100*(sum(long_school_sample$stpart,na.rm = T)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),
                     paste0(formatC(round(100*(sum(sample_schools$school_part==1, na.rm = T)/sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T))*(sum(long_school_sample$stpart,na.rm = T)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),
                     nrow(data),
-                    site_name)
+                    site_name,site_name)
 bmks = paste0('bmk', 1:length(additional_text))
 #
 eval(parse(text=paste0('doc = body_replace_text_at_bkm(doc,"', bmks,'","', additional_text,'")', sep='\n')))
 } else{
-  additional_text = c(paste0(survey_year,' ',site_name),
+  additional_text = c(survey_year,
                       paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
                       paste0(levels(data$DE_GRADE)[1],' - ',levels(data$DE_GRADE)[length(levels(data$DE_GRADE))]),
                       site_name,
@@ -179,7 +179,7 @@ eval(parse(text=paste0('doc = body_replace_text_at_bkm(doc,"', bmks,'","', addit
                       paste0(formatC(round(100*(sum(long_school_sample$stpart,na.rm = T)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),
                       paste0(formatC(round(100*(sum(sample_schools$school_part==1, na.rm = T)/sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T))*(sum(long_school_sample$stpart,na.rm = T)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),
                       nrow(data),
-                      site_name)
+                      site_name,site_name)
   bmks = paste0('bmk', 1:length(additional_text))
 
   eval(parse(text=paste0('doc = body_replace_text_at_bkm(doc,"', bmks,'","', additional_text,'")', sep='\n')))
