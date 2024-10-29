@@ -30,13 +30,13 @@ jobs:
       - name: Install required packages
         run: |
           Rscript -e 'install.packages(c("rms", "Matrix"), repos="https://cloud.r-project.org")'
-          Rscript -e 'install.packages(c("haven", "shinythemes", "tidyverse", "shiny", "shinydashboard", "shinyWidgets", "lubridate", "stringr", "readxl", "plotly", "zoo", "gridExtra", "cowplot", "anytime", "data.table", "DT", "shinyjs", "flextable", "officer", "ggpubr", "EpiReport", "xlsx", "zscorer", "Hmisc", "survey", "questionr", "writexl", "openxlsx", "readr"), dep=TRUE)'
+          Rscript -e 'install.packages(c("haven", "shinythemes", "tidyverse", "shiny", "shinydashboard", "shinyWidgets", "lubridate", "stringr", "readxl", "plotly", "zoo", "gridExtra", "cowplot", "anytime", "data.table", "DT", "shinyjs", "flextable", "officer", "ggpubr", "EpiReport", "xlsx", "zscorer", "Hmisc", "survey", "questionr", "writexl", "openxlsx", "readr"),repos="https://cloud.r-project.org", dep=TRUE)'
 
       - name: Install rsconnect from CRAN with logs
         run: |
           Rscript -e 'install.packages("rsconnect", repos="https://cloud.r-project.org", dependencies = TRUE)'
           Rscript -e 'print("rsconnect successfully installed.")'
-
+          Rscript -e 'print(sessionInfo())'
       - name: Verify rsconnect is installed
         run: |
           Rscript -e 'if (!"rsconnect" %in% installed.packages()) stop("rsconnect not installed")'
