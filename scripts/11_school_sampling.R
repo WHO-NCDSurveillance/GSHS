@@ -78,7 +78,8 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   total_enrolment = sum(datum$enrolment, na.rm = T) 
   overall_sampling_fraction = (adj_no_qnaires) / sum(datum$enrolment, na.rm = T)
   global_sf <<-overall_sampling_fraction
-  
+  global_datum <<- datum
+
   if(all_schools=='No')
   {
     ##Selection of certainty schools
