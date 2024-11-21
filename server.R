@@ -910,7 +910,7 @@ server <- function(input, output, session) {
       site_name <<-input$site_name
       survey_year <<-input$input_year
       #
-      source(paste0(getwd(),'/scripts/11_school_sampling.R'))
+      source(paste0(getwd(),'/scripts/11_school_sampling.R'), local = TRUE)
       ###Zipping the reports
       files2zip <- dir('sampling outputs', full.names = TRUE)
       zip(zipfile = 'sampling outputs', files = files2zip)
