@@ -274,7 +274,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   if (any(total_schools_to_select <= schools_MOS_adjusted | (!is.na(min_measure_of_size) & (min_measure_of_size < 0 | min_measure_of_size > maximum_enrolment))))
   {
     output$warningUI = renderUI( {
-      fluidRow(tags$div(tags$span(style = "color: red;",paste0('Consider increasing either the number of ',unique(global_datum$category),' schools to ' ,schools_MOS_adjusted+1,' or adjust the school or student response rate.'))))
+      fluidRow(tags$div(tags$span(style = "color: red;",paste0('Consider increasing either the number of ',unique(global_datum$category),' schools to ' ,floor(schools_MOS_adjusted),' or adjust the school or student response rate.'))))
     })
     stop('')
   } else{}
