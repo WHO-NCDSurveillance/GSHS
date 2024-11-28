@@ -958,8 +958,8 @@ server <- function(input, output, session) {
       BMI_response <<- input$report_BMI
       is_this_census <<-input$census2
       #
-      source(paste0(getwd(),'/scripts/4_primary_codebook.R'))
-      source(paste0(getwd(),'/scripts/6_detailed_tables.R'))
+      source(paste0(getwd(),'/scripts/4_primary_codebook.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/6_detailed_tables.R'),local=TRUE)
       ###
       file.copy(paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' Detailed Tables.docx'), cont)
     })
@@ -991,11 +991,11 @@ server <- function(input, output, session) {
       is_this_census <<-input$census2
       weighted_reporting <<-input$weighted_report
       #
-      source(paste0(getwd(),'/scripts/4_primary_codebook.R'))
-      source(paste0(getwd(),'/scripts/5_demographic_table.R'))
-      source(paste0(getwd(),'/scripts/7_binary_codebook.R'))
-      source(paste0(getwd(),'/scripts/9_factsheet.R'))
-      source(paste0(getwd(),'/scripts/10_sample_description.R'))
+      source(paste0(getwd(),'/scripts/4_primary_codebook.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/5_demographic_table.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/7_binary_codebook.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/9_factsheet.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/10_sample_description.R'),local=TRUE)
       ###Zipping the reports
       files2zip <- dir('Batch Reports', full.names = TRUE)
       zip(zipfile = 'Batch Reports', files = files2zip)
@@ -1017,9 +1017,9 @@ server <- function(input, output, session) {
       language <<-toupper(input$language)
       post_weight <<-input$weighting_approach
       ##
-      source(paste0(getwd(),'/scripts/1_cleaning_and_mapping.R'))
-      source(paste0(getwd(),'/scripts/2_weighting.R'))
-      source(paste0(getwd(),'/scripts/3_pre_report_processing.R'))
+      source(paste0(getwd(),'/scripts/1_cleaning_and_mapping.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/2_weighting.R'),local=TRUE)
+      source(paste0(getwd(),'/scripts/3_pre_report_processing.R'),local=TRUE)
       ##
       file.copy(paste0(getwd(),'/weighted_dataset/Processed_and_Weighted_Data.xlsx'), cont)
     })
