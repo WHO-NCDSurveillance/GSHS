@@ -56,7 +56,7 @@ library(openxlsx)
 library(readr)
 
 
-options(shiny.maxRequestSize = 10 * 1024^2)
+options(shiny.maxRequestSize = 100 * 1024^2)
 options(survey.lonely.psu="certainty")
 options(survey.adjust.domain.lonely=TRUE)
 ###
