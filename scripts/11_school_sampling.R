@@ -74,6 +74,8 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   
   adj_no_qnaires = no_qnaires/(st_resprate*permission_rate*sch_resprate)
   adj_no_schools = ifelse(all_schools=='No',ceiling(no_schools/sch_resprate),nrow(datum)) %>% round()
+  ###
+  if(adj_no_schools>no_schools){stop(paste0('Adjust the number of schools to a maximum of: ',floor(sch_resprate*nrow(datum))))}
   # Calculate the overall sampling fraction
   total_enrolment = sum(datum$enrolment, na.rm = T) 
   overall_sampling_fraction = (adj_no_qnaires) / sum(datum$enrolment, na.rm = T)
@@ -85,7 +87,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     ##Selection of certainty schools
     initial_SI = round(sum(datum$enrolment, na.rm = T)/adj_no_schools)
     revised_SI = initial_SI
-    mod_datum = datum
+    mod_datum = datum 
     # Initialize certainty_schools
     certainty_schools = data.frame(mod_datum[0, ])
     
@@ -132,6 +134,9 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
                                                       round(StudentWeight),numberOfclasses = selectClasses), 
                                      collapse = ','),NA),School_Selected = 'Yes')
     
+    ###
+    common_variables = c('school_ID', 'school','enrolment','RevisedMOS', 'category', 'SchoolWeight', 'StudentWeight', 'classes', 'School_Selected')
+
     ####Updated frame only containing non-certainty schools
     if (nrow(certainty_schools)>0)
     {
@@ -139,7 +144,8 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
         dplyr::filter(eval(parse(text=paste0('!(',paste0('school_ID','==',certainty_schools$school_ID, collapse = '|'),')'))))
     } else{non_certainty_schools= mod_datum}
     #####
-    maximum_enrolment <<- max(non_certainty_schools$enrolment, na.rm = T)
+    #maximum_enrolment <<- max(non_certainty_schools$enrolment, na.rm = T)
+    maximum_enrolment <<- max(datum$enrolment, na.rm = T)
     
     #####
     
@@ -169,7 +175,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
       #
       min_measure_of_size <<- non_certainty_schools$sampling_factor[non_certainty_schools$enrolment < non_certainty_schools$sampling_factor][1]
       # Total number of schools to be systematically selected
-      total_schools_to_select <<- adj_no_schools - nrow(certainty_schools)
+        total_schools_to_select <<- adj_no_schools - nrow(certainty_schools)
       ### Adjust measures of size for noncertainty schools
       if(!is.na(min_measure_of_size))
       {
@@ -244,16 +250,36 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     } else {}
     
     # Select the schools using the computed indices
-    common_variables = c('school_ID', 'school','enrolment','RevisedMOS', 'category', 'SchoolWeight', 'StudentWeight', 'classes', 'School_Selected')
+    if(nrow(mod_datum)!=0)
+    {
     non_certainty_schools = non_certainty_schools %>% dplyr::select(all_of(common_variables)) %>% mutate_all(as.character)
+    }
+    
     certainty_schools = certainty_schools %>% dplyr::select(all_of(common_variables))%>% mutate_all(as.character)
     #
     no_schools_MOS_adj <<- sum(non_certainty_schools$RevisedMOS == min_measure_of_size, na.rm = T)
     schools_MOS_adjusted <<- global_sf*no_schools_MOS_adj
-    #
-    selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
+    #Conversion to common type
+    
+    #selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
+    
+    if(nrow(non_certainty_schools)== 0 & nrow(certainty_schools)>0){
+      selected_schools = certainty_schools
+    } else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)==1){
+      selected_schools = non_certainty_schools
+    }else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)==1){
+      selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
+      }else{}
+    
+    
+    
     
   } else {
+    total_schools_to_select <<- nrow(datum)
+    schools_MOS_adjusted = 0
+    min_measure_of_size = min(datum$enrolment, na.rm = T)
+    maximum_enrolment = max(datum$enrolment, na.rm = T)
+    
     common_variables = c('school_ID', 'school','enrolment','RevisedMOS', 'category', 'SchoolWeight', 'StudentWeight', 'classes', 'School_Selected')
     
     selected_schools = datum %>% 
@@ -271,7 +297,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   # {
   #   stop(paste0('Consider increasing either the number of ',unique(datum$category),' schools to be selected or adjust the school or student response rate'))
   # } else{}
-  if (any(total_schools_to_select <= schools_MOS_adjusted | (!is.na(min_measure_of_size) & (min_measure_of_size < 0 | min_measure_of_size > maximum_enrolment))))
+  if (any(input$census == 'No' & (total_schools_to_select <= schools_MOS_adjusted | (!is.na(min_measure_of_size) & (min_measure_of_size < 0 | min_measure_of_size > maximum_enrolment)))))
   {
     output$warningUI = renderUI( {
       fluidRow(tags$div(tags$span(style = "color: red;",paste0('Consider increasing either the number of ',unique(global_datum$category),' schools to ' ,floor(schools_MOS_adjusted),' or adjust the school or student response rate.'))))

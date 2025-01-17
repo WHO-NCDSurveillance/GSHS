@@ -863,7 +863,7 @@ server <- function(input, output, session) {
   
   ###
   output$stratUI = renderUI( {
-    if (!is.null(input$samplingframe) & input$census =='No')
+    if (!is.null(input$samplingframe))##& input$census =='No'
     {
       frame_data = frame_data_input() %>% as.data.frame()
       colnames(frame_data) = tolower(colnames(frame_data))
