@@ -38,7 +38,19 @@ demographic_table_fn = function()
     unwgt_grade_freq = unwgt_grade_freq %>% as.data.frame() %>% mutate(Missing = 0)
   }else{}
   
-
+ ####
+  age_length = length(unique(table(data$age_cat)))
+  grade_length = length(unique(table(data$DE_GRADE)))
+  #
+  if(nrow(unwgt_age_freq) == age_length)
+  {
+    unwgt_age_freq = rbind(unwgt_age_freq,c(0,0,0,0))
+  }else{}
+  #
+  if(nrow(unwgt_grade_freq) == grade_length)
+  {
+    unwgt_grade_freq = rbind(unwgt_grade_freq,c(0,0,0,0))
+  }else{}
   #####
   total_n = c(nrow(data), with(data,table(DE_SEX, useNA = 'ifany')))
   total_n[4][is.na(total_n[4])]=0
