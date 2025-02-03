@@ -267,9 +267,9 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     
     if(nrow(non_certainty_schools)== 0 & nrow(certainty_schools)>0){
       selected_schools = certainty_schools
-    } else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)==1){
+    } else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)>0){
       selected_schools = non_certainty_schools
-    }else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)==1){
+    }else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)>0){
       selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
       }else{}
     
