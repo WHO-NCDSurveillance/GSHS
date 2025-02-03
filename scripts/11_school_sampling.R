@@ -31,15 +31,17 @@ class_sampling = function(numberOfclasses = 20, sampling_interval = 1.54, random
   ###
   seq_numbers = seq(1, numberOfclasses, sampling_interval)
   
-  if(length(seq_numbers) > sample_size)
-  {
-    max_random = round(max(seq_numbers[1:(length(seq_numbers)-sample_size)], na.rm=T))
+  #if(length(seq_numbers) > sample_size)
+  #{
+  #  max_random = round(max(seq_numbers[1:(length(seq_numbers)-sample_size)], na.rm=T))
     
-  } else{max_random = round(sampling_interval)}
-  
-  if (is.null(random_start)) {
-    random_start = sample(1:max_random, 1)
-  } 
+  #} else{max_random = round(sampling_interval)}
+  max_random = ceiling(sampling_interval)
+  random_start = sample(1:max_random, 1)
+
+  #if (is.null(random_start)) {
+  #  random_start = sample(1:max_random, 1)
+  #} 
   
   random_prob = random_start/numberOfclasses
   
