@@ -77,6 +77,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   adj_no_qnaires = no_qnaires/(st_resprate*permission_rate*sch_resprate)
   adj_no_schools = ifelse(all_schools=='No',ceiling(no_schools/sch_resprate),nrow(datum)) %>% round()
   ###
+  if(adj_no_schools>nrow(datum)){adj_no_schools = nrow(datum)}
   #if(adj_no_schools>nrow(datum)){stop(paste0('Adjust the number of schools to a maximum of: ',floor(sch_resprate*nrow(datum))))}
   # Calculate the overall sampling fraction
   total_enrolment = sum(datum$enrolment, na.rm = T) 
@@ -84,7 +85,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   global_sf <<-overall_sampling_fraction
   global_datum <<- datum
 
-  if(all_schools=='No')
+  if(all_schools=='No' & (nrow(datum) < adj_no_schools))
   {
     ##Selection of certainty schools
     initial_SI = round(sum(datum$enrolment, na.rm = T)/adj_no_schools)
