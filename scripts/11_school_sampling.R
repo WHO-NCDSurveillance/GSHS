@@ -85,7 +85,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
   global_sf <<-overall_sampling_fraction
   global_datum <<- datum
 
-  if(all_schools=='No' & (nrow(datum) < adj_no_schools))
+  if(all_schools=='No' & (nrow(datum) > adj_no_schools))
   {
     ##Selection of certainty schools
     initial_SI = round(sum(datum$enrolment, na.rm = T)/adj_no_schools)
@@ -139,7 +139,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     
     ###
     common_variables = c('school_ID', 'school','enrolment','RevisedMOS', 'category', 'SchoolWeight', 'StudentWeight', 'classes', 'School_Selected')
-
+    other_variables = setdiff(c(common_variables,names(datum)),c(grep('__',names(datum), v=T)))
     ####Updated frame only containing non-certainty schools
     if (nrow(certainty_schools)>0)
     {
@@ -255,10 +255,10 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     # Select the schools using the computed indices
     if(nrow(mod_datum)!=0)
     {
-    non_certainty_schools = non_certainty_schools %>% dplyr::select(all_of(common_variables)) %>% mutate_all(as.character)
+    non_certainty_schools = non_certainty_schools %>% dplyr::select(all_of(c(common_variables,other_variables))) %>% mutate_all(as.character)
     }
     
-    certainty_schools = certainty_schools %>% dplyr::select(all_of(common_variables))%>% mutate_all(as.character)
+    certainty_schools = certainty_schools %>% dplyr::select(all_of(c(common_variables,other_variables)))%>% mutate_all(as.character)
     #
     no_schools_MOS_adj <<- sum(non_certainty_schools$RevisedMOS == min_measure_of_size, na.rm = T)
     schools_MOS_adjusted <<- global_sf*no_schools_MOS_adj
@@ -268,7 +268,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     
     if(nrow(non_certainty_schools)== 0 & nrow(certainty_schools)>0){
       selected_schools = certainty_schools
-    } else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)>0){
+    } else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)==0){
       selected_schools = non_certainty_schools
     }else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)>0){
       selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
@@ -284,6 +284,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     maximum_enrolment = max(datum$enrolment, na.rm = T)
     
     common_variables = c('school_ID', 'school','enrolment','RevisedMOS', 'category', 'SchoolWeight', 'StudentWeight', 'classes', 'School_Selected')
+    other_variables = setdiff(c(common_variables,names(datum)),c(grep('__',names(datum), v=T)))
     
     selected_schools = datum %>% 
       mutate(adjsch_prob = 1,
@@ -293,7 +294,7 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
       rowwise() %>%
       mutate(classes = ifelse(nrow(datum) > 0,paste0(class_sampling(sampling_interval = round(StudentWeight),
                                                                     numberOfclasses = selectClasses), collapse = ','),NA))%>%
-      dplyr::select(all_of(common_variables))
+      dplyr::select(all_of(c(common_variables,other_variables)))
   }
   #############
   # if (all_schools=='No' & any(total_schools_to_select <= schools_MOS_adjusted | (!is.na(min_measure_of_size) &min_measure_of_size > maximum_enrolment)))
