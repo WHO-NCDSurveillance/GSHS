@@ -25,7 +25,7 @@ long_school_sample = adj_school_wt %>%
   dplyr::filter(class_id!=0)%>%mutate(school_id = as.character(school_id))
 
 ##########Fact sheet 
-if(language =='FRENCH')
+if(language =='FRENCH' | language == 'SPANISH')
 {
   factsheet_sections = updated_matrix %>% dplyr::filter(!is.na(factsheet_section))%>%
     dplyr::select(bin_standard, factsheet_section,factsheet_subtitle) %>% distinct() %>%
