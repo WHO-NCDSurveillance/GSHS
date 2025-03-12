@@ -106,11 +106,11 @@ if (BMI_response == 'Yes')
   eval(parse(text=paste0('data_v1$',country_variables,'= data_v1$original_',country_variables, sep = '\n')))
   
   data_v1 = data_v1 %>% dplyr::select(-grep('original', names(data_v1), v =T))
-  data_v1 = data_v1 %>% dplyr::select(-c(bmiAgeZ, prestrat_wgt, post_adj_factor, post_strat_weights,
+  data_v1 = data_v1 %>% dplyr::select(-c(bmiAgeZ, HtAgeZ, prestrat_wgt, post_adj_factor, post_strat_weights,
                                          height, weight, age_cat, many_similar, `many_similar == FALSE`,grep('q_[0-9]|q[0-9]',names(data_v1),v=T))) %>% 
     dplyr::rename(survey_weight = normalised_weights) #%>% mutate(record_id = 1:n())
   #
-  prior_vars = c('record_id','school_id','class_id','stratum', 'psu', 'survey_weight','BMI_status','DE_AGE',	'DE_SEX',	'DE_GRADE')
+  prior_vars = c('record_id','school_id','class_id','stratum', 'psu', 'survey_weight','BMI_status','stunting_status','DE_AGE',	'DE_SEX',	'DE_GRADE')
   all_other_variables = setdiff(names(data_v1),prior_vars)
   combined_vars = c(prior_vars,all_other_variables)
   #
@@ -126,7 +126,7 @@ if (BMI_response == 'Yes')
   
   data_v2 = data_v2 %>% dplyr::select(-grep('original', names(data_v2), v =T))
   
-  data_v2 = data_v2 %>% dplyr::select(-c(bmiAgeZ, prestrat_wgt, post_adj_factor, post_strat_weights,
+  data_v2 = data_v2 %>% dplyr::select(-c(bmiAgeZ, HtAgeZ, prestrat_wgt, post_adj_factor, post_strat_weights,
                                          height, weight, age_cat, many_similar, `many_similar == FALSE`)) %>% 
     dplyr::rename(survey_weight = normalised_weights) %>% mutate(record_id = 1:n())
   

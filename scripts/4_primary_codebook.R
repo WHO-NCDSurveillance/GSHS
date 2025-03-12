@@ -26,15 +26,17 @@ map_categorical = map_dictionary %>%dplyr::filter(standard!= 'DB_HEIGHT' & stand
 ###
 if (BMI_response == 'Yes')
 {
-  ###Updated dictionary to reflect numerators and site variable for DB_UNDERWT, DB_OVERWT, and DB_OBESE
+  ###Updated dictionary to reflect numerators and site variable for DB_STUNTING, DB_UNDERWT, DB_OVERWT, and DB_OBESE
   updated_matrix = mapping_matrix %>%
-    mutate(numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'",numerator),
+    mutate(numerator = ifelse(bin_standard =='DB_STUNTING', "'Stunted'",numerator),
+           site = ifelse(bin_standard=='DB_STUNTING','stunting_status',site),
+           numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'",numerator),
            numerator = ifelse(bin_standard =='DB_OVERWT', "c('Overweight','Obese')",numerator),
            numerator = ifelse(bin_standard =='DB_OBESE', "'Obese'",numerator),
            site = ifelse(bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE','BMI_status',site))
   
 } else{updated_matrix = mapping_matrix %>% dplyr::filter(!(bin_standard=='DB_HEIGHT'|bin_standard=='DB_WEIGHT'|
-                                                             bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE'))
+                                                             bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE'|bin_standard=='DB_STUNTING'))
 map_dictionary = map_dictionary %>% dplyr::filter(!(standard=='DB_HEIGHT' | standard=='DB_HEIGHT'))}
 
 ######################################################################################################################################################################

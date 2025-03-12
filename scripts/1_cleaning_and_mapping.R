@@ -121,10 +121,10 @@ raw_data = raw_data %>%
 # Numeric conversions for categorical and numeric variables
 eval(parse(text=paste0('raw_data$',continuous_variables,'= as.numeric(raw_data$',continuous_variables,')', sep='\n')))
 
-# Applying WHO BMI for age standards to generate BMI z scores
 if (BMI_response == 'Yes')
 {
-raw_data = addWGSR(raw_data, sex = "SEX_new", firstPart = "DB_WEIGHT", 
+  # Applying WHO BMI for age standards to generate BMI z scores
+  raw_data = addWGSR(raw_data, sex = "SEX_new", firstPart = "DB_WEIGHT", 
                    secondPart = "DB_HEIGHT", thirdPart = "AGE_new", index = "bfa", 
                    output = "bmiAgeZ", digits = 4) %>% 
 
@@ -136,15 +136,27 @@ raw_data = addWGSR(raw_data, sex = "SEX_new", firstPart = "DB_WEIGHT",
                                             bmiAgeZ >=2 ~ 4),
                    BMI_status = factor(BMI_status, levels = 1:4, labels = c('Underweight','Normal','Overweight','Obese')))
 
-# Updated dictionary to reflect numerators and site variable for DB_UNDERWT, DB_OVERWT, and DB_OBESE
+  # Applying WHO height-for-age standards to generate z scores for stunting assessment
+  raw_data = addWGSR(raw_data, sex = "SEX_new", firstPart = "DB_HEIGHT", 
+                   secondPart = "AGE_new", index = "hfa", output = "HtAgeZ", digits = 4) %>% 
+  
+  # Cleaning Ht-for-age based on published cut-offs by age and sex
+  mutate(HtAgeZ = ifelse((HtAgeZ < (-5) | HtAgeZ > 5), NA, HtAgeZ), 
+         stunting_status = case_when(HtAgeZ < (-2) ~ 1,
+                                     HtAgeZ >= (-2) ~ 2),
+         stunting_status = factor(stunting_status, levels = 1:2, labels = c('Stunted','Not_stunted')))
+
+# Updated dictionary to reflect numerators and site variable for DB_STUNTING, DB_UNDERWT, DB_OVERWT, and DB_OBESE
 updated_matrix = mapping_matrix %>%
-                  mutate(numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'",numerator),
-                         numerator = ifelse(bin_standard =='DB_OVERWT', "c('Overweight','Obese')",numerator),
-                         numerator = ifelse(bin_standard =='DB_OBESE', "'Obese'",numerator),
-                         site = ifelse(bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE','BMI_status',site))
+  mutate(numerator = ifelse(bin_standard =='DB_STUNTING', "'Stunted'",numerator),
+         site = ifelse(bin_standard=='DB_STUNTING','stunting_status',site),
+         numerator = ifelse(bin_standard =='DB_UNDERWT', "'Underweight'",numerator),
+         numerator = ifelse(bin_standard =='DB_OVERWT', "c('Overweight','Obese')",numerator),
+         numerator = ifelse(bin_standard =='DB_OBESE', "'Obese'",numerator),
+         site = ifelse(bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE','BMI_status',site))
 
 }else{updated_matrix = mapping_matrix %>% dplyr::filter(!(bin_standard=='DB_HEIGHT'|bin_standard=='DB_WEIGHT'|
-                                                             bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE'))
+                                                             bin_standard=='DB_UNDERWT'|bin_standard=='DB_OVERWT'|bin_standard=='DB_OBESE'|bin_standard=='DB_STUNTING'))
 map_dictionary = map_dictionary %>% dplyr::filter(!(standard=='DB_HEIGHT' | standard=='DB_HEIGHT'))}
 
 
