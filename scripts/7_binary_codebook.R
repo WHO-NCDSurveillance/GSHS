@@ -68,7 +68,7 @@ if(language =='FRENCH')
 flex_binary_dictionary = generated_binary_dictionary %>% flextable()%>%
                           flextable::style(pr_t=fp_text(font.family='Source Sans Pro'), part = 'all')%>%
                           bold(part = 'header')%>%
-                          hline(i = c(as.numeric(gsub('V','',rownames(generated_binary_dictionary)[generated_binary_dictionary[,3]==eval(parse(text = paste0('if (language == "ENGLISH")\n{"Missing"}else if(language == "FRENCH")\n{"Manquant"} else if(language == "SPANISH")\n{"Perdido"} else if(language == "RUSSIAN")\n{"Потерянный"} else{}')))]))), 
+                          hline(i = c(as.numeric(gsub('V','',rownames(generated_binary_dictionary)[generated_binary_dictionary[,3]==eval(parse(text = paste0('if (language == "ENGLISH")\n{"Missing"}else if(language == "FRENCH")\n{"Manquant"} else if(language == "SPANISH")\n{"Valor perdido"} else if(language == "RUSSIAN")\n{"Потерянный"} else{}')))]))), 
                                 border=fp_border(color="gray", style="solid", width=1)) %>% 
                           fontsize(size = 9 ,part = "all")%>%autofit()%>% 
                           merge_h_range(i = c(as.numeric(gsub('V','',rownames(generated_binary_dictionary)[generated_binary_dictionary[,3]=='']))), j1 = 2, j2 = 5)%>%
