@@ -148,9 +148,18 @@ if (BMI_response == 'Yes')
   
   data_v1 = data_v1 %>% dplyr::select(-grep('original', names(data_v1), v =T))
   data_v1 = data_v1 %>% dplyr::select(-c(prestrat_wgt, post_adj_factor, post_strat_weights,
-                                         height, weight, age_cat, many_similar, `many_similar == FALSE`,grep('q_[0-9]|q[0-9]',names(data_v1),v=T))) %>% 
+                                         age_cat, many_similar, `many_similar == FALSE`,grep('q_[0-9]|q[0-9]',names(data_v1),v=T))) %>% 
     dplyr::rename(survey_weight = normalised_weights) %>% mutate(record_id = 1:n())
   #
+  
+  # in case weight and height are in dataset (but not included in analysis) - remove them
+  if ("weight" %in% names(data_v1)) {
+    data_v1 <- data_v1[, !names(data_v1) %in% "weight"] 
+  }
+  if ("height" %in% names(data_v1)) {
+    data_v1 <- data_v1[, !names(data_v1) %in% "height"] 
+  }
+  
   prior_vars = c('record_id','school_id','class_id','stratum', 'psu', 'survey_weight','DE_AGE',	'DE_SEX',	'DE_GRADE')
   all_other_variables = setdiff(names(data_v1),prior_vars)
   combined_vars = c(prior_vars,all_other_variables)
@@ -168,8 +177,16 @@ if (BMI_response == 'Yes')
   data_v2 = data_v2 %>% dplyr::select(-grep('original', names(data_v2), v =T))
   
   data_v2 = data_v2 %>% dplyr::select(-c(prestrat_wgt, post_adj_factor, post_strat_weights,
-                                         height, weight, age_cat, many_similar, `many_similar == FALSE`)) %>% 
+                                         age_cat, many_similar, `many_similar == FALSE`)) %>% 
     dplyr::rename(survey_weight = normalised_weights) %>% mutate(record_id = 1:n())
+  
+  # in case weight and height are in dataset (but not included in analysis) - remove them
+  if ("weight" %in% names(data_v2)) {
+    data_v2 <- data_v2[, !names(data_v2) %in% "weight"] 
+  }
+  if ("height" %in% names(data_v2)) {
+    data_v2 <- data_v2[, !names(data_v2) %in% "height"] 
+  }
   
   #
   all_other_variables2 = setdiff(names(data_v2),prior_vars)

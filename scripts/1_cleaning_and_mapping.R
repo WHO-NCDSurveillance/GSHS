@@ -114,12 +114,15 @@ raw_data = raw_data %>%
                                               AGE_years == 18 ~ 4),
               age_cat = factor(age_cat, levels = 1:4, labels = c('12 or younger','13 - 15','16 or 17','18 or older')),
               ##Recoding age into days for BMI computation
-              AGE_new = (AGE_years*365.25 + 0.5*365.25),
+              #AGE_new = (AGE_years*365.25 + 0.5*365.25),
+              AGE_new = case_when(AGE_years==11 ~ (AGE_years*365.25),AGE_years>11 & AGE_years<=18 ~ (AGE_years*365.25 + 0.5*365.25)), 
               ##Recoding gender into 1 and 2 
               SEX_new = case_when(DE_SEX == 'A' ~ 1, DE_SEX == 'B' ~ 2)) 
 
 # Numeric conversions for categorical and numeric variables
+if (BMI_response == 'Yes') {
 eval(parse(text=paste0('raw_data$',continuous_variables,'= as.numeric(raw_data$',continuous_variables,')', sep='\n')))
+}
 
 if (BMI_response == 'Yes')
 {
