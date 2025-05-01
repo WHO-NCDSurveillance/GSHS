@@ -2,6 +2,12 @@
 bks = c('country',paste0('bk',1:13))
 original_raw_data = original_data
 
+if (nzchar(Sys.getenv("total_recs"))) {
+  total_num_recs <- as.numeric(Sys.getenv("total_recs"))
+} else {
+  total_num_recs <- max(as.numeric(data$record_id), na.rm = T)
+}
+
 ###
 if(is_this_census=='No')
 {
@@ -13,7 +19,7 @@ samp_desc = c(site_name,
               sum(sample_schools$school_part==1, na.rm = T),
               sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T),
               paste0(formatC(round(100*(nrow(original_raw_data)/sum(long_school_sample$cenrol, na.rm = T)),1),format = 'f', digits = 1),'%'),
-              nrow(original_raw_data),
+              total_num_recs,
               sum(long_school_sample$cenrol, na.rm = T),
               nrow(data),
               paste0(paste0(formatC(round(100*(sum(sample_schools$school_part==1, na.rm = T)/sum(sample_schools$school_part==1|sample_schools$school_part==0, na.rm = T)),1),format = 'f', digits = 1),'%'),'*',

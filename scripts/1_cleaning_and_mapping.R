@@ -4,6 +4,8 @@
 ##Reading raw data
 #raw_data = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Raw') %>% mutate(record_id = 1:n())
 raw_data = raw_data%>% mutate(record_id = 1:n())
+total_recs = nrow(raw_data)
+Sys.setenv(total_recs = as.character(total_recs))
 ##Reading mapping matrix
 #mapping_matrix = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Matrix')
 
@@ -20,15 +22,12 @@ map_dictionary = mapping_matrix %>% dplyr::filter(!is.na(survey_question)) %>%
 
   original_raw_data = raw_data  
 
-  # Check for too many similar responses in a row: response repeated 15 or more times, except for A
-  # Define a function to check for similar responses
+  # Function to check for too many similar responses in a row: response repeated 15 or more times, except for A
   too_many_similar_responses = function(response, threshold = 15) {
     response = gsub("A", "", response)  # Remove 'A' from response
     max_repeat = max(str_count(response, "(.)\\1*"), na.rm = T)  # Find maximum repeated character count
     max_repeat >= threshold
   }
-  # Apply the function to each row and summarize
-  raw_data = raw_data %>% mutate(many_similar = apply(.[,-1], 1, too_many_similar_responses))%>% mutate(many_similar==FALSE)
   
 # Assigning site specific variables to standard variable names
 eval(parse(text=paste0('raw_data$',map_dictionary$standard,'=NA', sep = '\n')))
@@ -186,10 +185,14 @@ non_missing_counts_row =  raw_data %>%
   mutate(non_missing_count = sum(!is.na(c_across(everything())))) %>% 
   dplyr::select(non_missing_count)
 
-## Filtering out records with at least 20 variables with missing data
+## Filtering out records with fewer than 20 valid responses
 raw_data = cbind(raw_data,non_missing_counts_row) %>% 
   dplyr::filter(non_missing_count>=20) %>% 
   dplyr::select(-non_missing_count) %>% as.data.frame()
+
+# finally check for too many similar responses, other than A by calling function defined above
+raw_data = raw_data %>% mutate(many_similar = apply(.[,-1], 1, too_many_similar_responses))%>% mutate(many_similar==FALSE)
+
 
 
 #####Cleaned standard variables::::::::::::::::::::::::::::::::::::::::::
