@@ -1,10 +1,11 @@
 ####NOTE: When working with rstudio interface please uncomment lines 3 - 6
 ##Loading Excel files for frame and sample/selected schools
-# frame_schools = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Frame')
+# frame_schools = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Frame', col_names = TRUE, col_types = "text")
 # sample_schools = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Sample')
 # colnames(frame_schools) = tolower(colnames(frame_schools))
 # colnames(sample_schools) = tolower(colnames(sample_schools))
 ##Setting school_ID and class_ID to lower case to merge with frame and sample in weight computation
+
 school_ID = grep('school_|SCHOOL_|School_', names(raw_data), v=T)
 class_ID = grep('class_|CLASS_|Class_', names(raw_data), v=T)
 #
@@ -62,10 +63,15 @@ eval(parse(text=paste0('raw_data$',map_categorical$standard, '= factor(as.charac
 colnames(frame_schools) = tolower(colnames(frame_schools))
 colnames(sample_schools) = tolower(colnames(sample_schools))
 
-#Adding total enrolment for each school to frame_schools
+# convert all enrolment columns in sampling frame to numeric
+frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)] <- 
+  lapply(frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)], as.numeric)
+
+# ensuring all empty enrolment cells are set to 0 and not NA so total enrolment can be calculated
 frame_schools[is.na(frame_schools)]=0
-#
-frame_schools = frame_schools %>% #mutate_all(~replace_na(., 0)) %>%
+
+# adding total enrolment for each school to frame_schools
+frame_schools = frame_schools %>% 
                 mutate(enrolment = eval(parse(text=paste0(grep('boys|girls', names(frame_schools), v=T), collapse = '+')))) %>% dplyr::filter(enrolment >0)
 
 ###Adding total enrolment for each school to sample_schools
