@@ -309,7 +309,7 @@ server <- function(input, output, session) {
     if (is.null(input$rawD))
       return(NULL)
     #
-    frame_schools = readxl::read_excel(input$rawD$datapath,sheet = 'Frame')
+    frame_schools = readxl::read_excel(input$rawD$datapath,sheet = 'Frame', col_names = TRUE, col_types = "text")
     sample_schools = readxl::read_excel(input$rawD$datapath,sheet = 'Sample')
     mapping_matrix = readxl::read_excel(input$rawD$datapath,sheet = 'Matrix')
     raw_data = readxl::read_excel(input$rawD$datapath,sheet = 'Raw')
