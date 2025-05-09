@@ -345,7 +345,7 @@ server <- function(input, output, session) {
     req(input$samplingframe)
     if (is.null(input$samplingframe))
       return(NULL)                
-    data_file=readxl::read_excel(input$samplingframe$datapath, ,col_types = 'text')
+    data_file=readxl::read_excel(input$samplingframe$datapath, col_types = 'text')
     return(data_file)
   })
   
