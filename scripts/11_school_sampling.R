@@ -27,7 +27,8 @@
 
 ###
 class_sampling = function(numberOfclasses = 20, sampling_interval = 1.54, random_start = NULL) {
-  if (double_draw == 'Yes'){sample_size = 20} else(sample_size = 10)
+  #if (double_draw == 'Yes'){sample_size = 20} else(sample_size = 10)
+  sample_size = round(0.75*numberOfclasses)
   ###
   seq_numbers = seq(1, numberOfclasses, sampling_interval)
   
