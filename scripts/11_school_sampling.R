@@ -328,10 +328,17 @@ for(i in 1:length(school_types))
 } 
 
 ###########################################
+##Determining short list of classes
+if(double_draw == 'Yes'){class_list = 20} else{class_list = 10}
+
+##
 all_sampled_school_type = all_sampled_school_type %>% rowwise %>%
-  separate(classes, into = c('Random Number','classes'), sep = ",", extra = "merge")
-
-
+                          separate(classes, into = c('Random Number','classes'), sep = ",", extra = "merge")%>%
+                          rowwise %>%
+                          mutate(
+                            short_class_list = str_split(classes, ",")[[1]] %>%
+                              as.numeric() %>%
+                              head(class_list) %>% paste(collapse = ","))
 
 ###Dropping school_ID and adding field ID
 all_school_types = all_sampled_school_type %>%dplyr::select(-school_ID)%>%
@@ -350,10 +357,11 @@ if(double_draw == 'Yes')
   all_school_types = all_school_types %>% rowwise %>% 
     mutate(gshs_start_point = sample(c(1,2),1),
            gyts_start_point = setdiff(c(1,2),gshs_start_point),
-           all_classes=list(eval(parse(text=paste0('c(',classes,')')))),
-           GSHS = paste0(all_classes[seq(gshs_start_point, length(all_classes), by = 2)],collapse = ','), 
-           GYTS = paste0(all_classes[seq(gyts_start_point, length(all_classes), by = 2)],collapse = ','))%>% 
-    dplyr::select(-c(all_classes,gshs_start_point,gyts_start_point)) %>% 
+           #all_classes=list(eval(parse(text=paste0('c(',classes,')')))),
+           class_list=list(eval(parse(text=paste0('c(',short_class_list,')')))),
+           GSHS = paste0(class_list[seq(gshs_start_point, length(class_list), by = 2)],collapse = ','), 
+           GYTS = paste0(class_list[seq(gyts_start_point, length(class_list), by = 2)],collapse = ','))%>% 
+    dplyr::select(-c(class_list,gshs_start_point,gyts_start_point)) %>% 
     dplyr::rename(`All classes` = classes) %>%
     mutate(AdjStudentWeight = as.numeric(StudentWeight)*2)
   
@@ -398,7 +406,7 @@ if(double_draw == 'Yes')
     doc = read_docx(paste0(getwd(),'/templates/',sample_language,'/template_single_draw.docx'))
     all_outputs = c(site_name,as.character(final_sample[i,'school']),
                     as.character(final_sample[i,'Field_ID']),
-                    as.character(final_sample[i,'classes']),
+                    as.character(final_sample[i,'short_class_list']),
                     as.character(final_sample[i,'StudentWeight']),
                     as.character(final_sample[i,'Random Number']))
     bmks = paste0('bmk',1:6)
