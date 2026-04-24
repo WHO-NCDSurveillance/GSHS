@@ -95,6 +95,7 @@ demographic_table_fn = function()
       vline_left(i=1,border = fp_border_default(width = 0),part = "header")%>%
       vline(i=1,border = fp_border_default(width = 0),part = "header")%>%
       align(align = "center", j = 2:8, part = "all") %>%
+      line_spacing(i = 3:nrow(combined_table), space = 1.5, part = "body") %>%
       width(j = 1:8, 2.8, unit = "in")%>%
       fontsize(size = 8,part = "all")%>%padding(padding = 0, part = "all")
 }else{
@@ -106,6 +107,7 @@ demographic_table_fn = function()
     vline_left(i=1,border = fp_border_default(width = 0),part = "header")%>%
     vline(i=1,border = fp_border_default(width = 0),part = "header")%>%
     align(align = "center", j = 2:11, part = "all") %>%
+    line_spacing(i = 3:nrow(combined_table), space = 1.5, part = "body") %>%
     width(j = 1:11, 2.8, unit = "in")%>%
     fontsize(size = 8,part = "all")%>%padding(padding = 0, part = "all")
 }
@@ -115,9 +117,9 @@ demographic_table_fn = function()
 demographic_table = demographic_table_fn()
 ## Printing of Demographic Table::::
 if(weighted_reporting=='Yes'){
-  doc = read_docx(paste0(getwd(),'/templates/',language,'/demographic_table_template.docx'))
+  doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/demographic_table_template.docx'))
 }else{
-  doc = read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/demographic_table_template.docx'))
+  doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/demographic_table_template.docx'))
 }
 #
 doc = headers_replace_text_at_bkm(doc,"country",site_name)
@@ -127,6 +129,6 @@ doc = headers_replace_text_at_bkm(doc,"year",survey_year)
 doc=doc %>% cursor_bookmark(id  = "table1") %>%
   body_add_flextable(width(demographic_table, width = dim(demographic_table)$widths*10/(flextable_dim(demographic_table)$widths)), pos = "on", align = 'left')
 
-print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' Demographic Table.docx')) 
+print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' GSHS Demographic Table.docx')) 
 
 

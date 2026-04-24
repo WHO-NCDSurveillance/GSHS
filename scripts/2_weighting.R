@@ -1,9 +1,10 @@
-####NOTE: When working with rstudio interface please uncomment lines 3 - 6
+####NOTE: When working with rstudio interface please uncomment lines 3 - 4
 ##Loading Excel files for frame and sample/selected schools
 # frame_schools = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Frame', col_names = TRUE, col_types = "text")
 # sample_schools = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Sample')
-# colnames(frame_schools) = tolower(colnames(frame_schools))
-# colnames(sample_schools) = tolower(colnames(sample_schools))
+colnames(frame_schools) = tolower(colnames(frame_schools))
+colnames(sample_schools) = tolower(colnames(sample_schools))
+
 ##Setting school_ID and class_ID to lower case to merge with frame and sample in weight computation
 
 school_ID = grep('school_|SCHOOL_|School_', names(raw_data), v=T)
@@ -55,10 +56,6 @@ eval(parse(text=paste0('raw_data$',map_categorical$standard, '= factor(as.charac
 # ##Assigning labels
 # eval(parse(text=paste0('label(raw_data$',map_dictionary$standard,') = "',gsub('\\s+',' ',gsub('^\\s*[^:]*:\\s*','',map_dictionary$survey_question)),'"')))
 
-##Loading Excel files for frame and sample/selected schools
-#
-# frame_schools = read_excel(paste0(getwd(),'/data inputs/frame.xlsx'))
-# sample_schools = read_excel(paste0(getwd(),'/data inputs/sample.xlsx'))
 #setting column names to lower case
 colnames(frame_schools) = tolower(colnames(frame_schools))
 colnames(sample_schools) = tolower(colnames(sample_schools))
@@ -68,7 +65,9 @@ frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)] <
   lapply(frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)], as.numeric)
 
 # ensuring all empty enrolment cells are set to 0 and not NA so total enrolment can be calculated
-frame_schools[is.na(frame_schools)]=0
+#frame_schools[is.na(frame_schools)]=0
+frame_schools <- frame_schools %>%
+  mutate(across(where(is.numeric), ~ replace_na(.x, 0)))
 
 # adding total enrolment for each school to frame_schools
 frame_schools = frame_schools %>% 

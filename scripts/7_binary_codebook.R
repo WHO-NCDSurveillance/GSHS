@@ -84,7 +84,7 @@ flex_binary_dictionary = generated_binary_dictionary %>% flextable()%>%
 
 ###
 ## Printing of Codebook::::
-doc = read_docx(paste0(getwd(),'/templates/',language,'/codebook_template.docx'))
+doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/codebook_template.docx'))
 #
 doc = headers_replace_text_at_bkm(doc,"country",site_name)
 doc = headers_replace_text_at_bkm(doc,"year",survey_year)
@@ -93,5 +93,5 @@ doc = headers_replace_text_at_bkm(doc,"year",survey_year)
 doc=doc %>% cursor_bookmark(id  = "table1") %>%
   body_add_flextable(width(flex_binary_dictionary, width = dim(flex_binary_dictionary)$widths*6.5/(flextable_dim(flex_binary_dictionary)$widths)), pos = "on", align = 'left')
 
-print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' Binary_Codebook.docx')) 
+print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' GSHS Binary Codebook.docx')) 
 

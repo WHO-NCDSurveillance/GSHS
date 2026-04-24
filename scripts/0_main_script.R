@@ -9,7 +9,7 @@ all.packages <- c(
   'haven', 'shinythemes', 'tidyverse', 'shiny', 'shinydashboard',
   'shinyWidgets', 'lubridate', 'stringr', 'readxl', 'plotly', 'zoo',
   'gridExtra', 'cowplot', 'anytime', 'data.table', 'DT', 'shinyjs',
-  'flextable', 'officer', 'ggpubr', 'EpiReport', 'xlsx', 'zscorer',
+  'flextable', 'officer', 'ggpubr', 'EpiReport', 'zscorer',
   'Hmisc', 'survey', 'questionr', 'writexl', 'openxlsx', 'future.apply','future'
 )
 
@@ -37,11 +37,14 @@ num_cores = ifelse(num_cores>1, round(num_cores*0.6), num_cores)
 # Plan and set up parallel processing using future
 plan(multisession, workers = num_cores)
 # Indicating country name and the year of the survey
-site_name = 'Bahamas'
-survey_year ='2023'
-compute_BMI_indicators = TRUE 
-weighted_analysis = TRUE
-is_this_census = TRUE
+site_name = 'Country name'
+survey_year ='2025'
+# cleaning and mapping expects first of two below yet it's not manually generated here, only in R Shiny
+compute_BMI_indicators = TRUE
+BMI_response = "Yes"
+
+weighted_analysis = FALSE
+is_this_census = FALSE
 language =c('ENGLISH','FRENCH', 'SPANISH','RUSSIAN','OTHER')[1]
 #if (language =='OTHER'){language = 'SPECIFY'} else{}
 weighting_grade_only = FALSE

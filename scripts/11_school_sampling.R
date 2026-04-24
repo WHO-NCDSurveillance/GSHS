@@ -1,4 +1,4 @@
-####NOTE: When running this script from the desktop, please uncomment lines 3-25
+####NOTE: When running this script from the desktop, please uncomment lines 3-24
 ###Further comment lines 269-272 and uncomment lines 273 - 279
 # rm(list = ls())
 # library(readxl)
@@ -6,8 +6,7 @@
 # library(openxlsx)
 # library(officer)
 # library(tidyr)
-# setwd("~/Documents/Transferred files/Data/data part 4/WHO/Sampling version 0")
-# frame_schools = read_excel('Eswatini_frame.xlsx') #%>%dplyr::filter(Type=='Private_High')
+# frame_schools = read_excel('frame.xlsx') #%>%dplyr::filter(Type=='Private_High')
 # colnames(frame_schools) = tolower(colnames(frame_schools))
 # #Inputs
 # school_types = sort(names(table(frame_schools$category))) ##Sorted in alphabetical order
@@ -20,7 +19,7 @@
 # all_schools = 'No'
 # school_enrolment_cutoff = 40
 # double_draw = 'Yes'
-# site_name = 'Eswatini'
+# site_name = 'country_name'
 # 
 # unlink(paste0(getwd(),'/sampling outputs/*')). 
 # ensure a folder named sampling outputs is created in the working directory if running this script from Rstudio
@@ -274,10 +273,6 @@ sampling_function = function(datum = frame_schools,no_qnaires = 2906, no_schools
     }else if(nrow(non_certainty_schools)> 0 & nrow(certainty_schools)>0){
       selected_schools = bind_rows(non_certainty_schools ,certainty_schools)
       }else{}
-    
-    
-    
-    
   } else {
     total_schools_to_select <<- nrow(datum)
     schools_MOS_adjusted = 0
@@ -367,6 +362,10 @@ if(double_draw == 'Yes')
   
 } else{}
 
+
+# when multiple samples drawn per site (explicit stratification), adjust Field_ID so there are no duplicates in entire national sample:
+#all_school_types = all_school_types %>% mutate(Field_ID= as.numeric(Field_ID)+25)
+
 ##final sample
 final_sample = all_school_types %>% dplyr::filter(School_Selected=='Yes')
 
@@ -388,7 +387,7 @@ if(double_draw == 'Yes')
   i = NULL
   for(i in 1:nrow(final_sample))
   {
-    doc = read_docx(paste0(getwd(),'/templates/',sample_language,'/template_double_draw.docx'))
+    doc = officer::read_docx(paste0(getwd(),'/templates/',sample_language,'/template_double_draw.docx'))
     all_outputs = c(site_name,as.character(final_sample[i,'school']),
                     as.character(final_sample[i,'Field_ID']),as.character(final_sample[i,'GSHS']),
                     as.character(final_sample[i,'GYTS']),
@@ -403,7 +402,7 @@ if(double_draw == 'Yes')
   i = NULL
   for(i in 1:nrow(final_sample))
   {
-    doc = read_docx(paste0(getwd(),'/templates/',sample_language,'/template_single_draw.docx'))
+    doc = officer::read_docx(paste0(getwd(),'/templates/',sample_language,'/template_single_draw.docx'))
     all_outputs = c(site_name,as.character(final_sample[i,'school']),
                     as.character(final_sample[i,'Field_ID']),
                     as.character(final_sample[i,'short_class_list']),
@@ -416,7 +415,7 @@ if(double_draw == 'Yes')
 }
 
 ####Combining doc outputs
-combined_forms_doc = read_docx()
+combined_forms_doc = officer::read_docx()
 
 i=NULL
 for(i in rev(1:nrow(final_sample))){

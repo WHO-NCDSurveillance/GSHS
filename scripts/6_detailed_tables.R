@@ -178,9 +178,9 @@ final_detailed_tables <<- unlist(detailed_tables, recursive = FALSE)
 i = NULL
 for (i in 1:length(final_detailed_tables)) {
   if(weighted_reporting=='Yes'){
-    my_doc = read_docx(paste0(getwd(),'/templates/',language,'/detailed_tables_template.docx'))
+    my_doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/detailed_tables_template.docx'))
   }else{
-    my_doc = read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/detailed_tables_template.docx'))  
+    my_doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/detailed_tables_template.docx'))  
   }
   if (i < length(final_detailed_tables))
   {
@@ -199,12 +199,13 @@ for (i in 1:length(final_detailed_tables)) {
 
 #observe({
 if(weighted_reporting=='Yes'){
-combined_detailed_doc <<- read_docx(paste0(getwd(),'/templates/',language,'/detailed_tables_template.docx'))
+combined_detailed_doc <<- officer::read_docx(paste0(getwd(),'/templates/',language,'/detailed_tables_template.docx'))
 }else{
-  combined_detailed_doc <<- read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/detailed_tables_template.docx'))
+  combined_detailed_doc <<- officer::read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/detailed_tables_template.docx'))
 }
 combined_detailed_doc <<- headers_replace_text_at_bkm(combined_detailed_doc,"country",site_name)
 combined_detailed_doc <<- headers_replace_text_at_bkm(combined_detailed_doc,"year",survey_year)
+combined_detailed_doc <<- footers_replace_text_at_bkm(combined_detailed_doc,"bmk1",as.character(n_cutoff))
 #})
 
 i=NULL
@@ -215,6 +216,6 @@ for(i in rev(1:length(final_detailed_tables))){
 
 # print combine doc
 #observe({
-print(detaileddoc,target=paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' Detailed Tables.docx')) 
+print(detaileddoc,target=paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' GSHS Detailed Tables.docx')) 
 #})
 

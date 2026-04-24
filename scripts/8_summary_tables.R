@@ -221,9 +221,9 @@ i = NULL
 for (i in 1:length(new_variables)) {
   
   if(weighted_reporting=='Yes'){
-    my_doc = read_docx(paste0(getwd(),'/templates/',language,'/Table_summary_template.docx'))
+    my_doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/Table_summary_template.docx'))
   }else{
-    my_doc = read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/Table_summary_template.docx'))  
+    my_doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/Table_summary_template.docx'))  
   }
   
   summary_tables = all_summary_tables[[i]]
@@ -256,12 +256,13 @@ for (i in 1:length(new_variables)) {
 
 #reactive({
 if(weighted_reporting=='Yes'){
-  combined_sum_doc <<- read_docx(paste0(getwd(),'/templates/',language,'/Table_summary_template.docx'))
+  combined_sum_doc <<- officer::read_docx(paste0(getwd(),'/templates/',language,'/Table_summary_template.docx'))
 }else{
-  combined_sum_doc <<- read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/Table_summary_template.docx'))
+  combined_sum_doc <<- officer::read_docx(paste0(getwd(),'/templates/',language,'/UNWEIGHTED/Table_summary_template.docx'))
 }
 combined_sum_doc <<- officer::headers_replace_text_at_bkm(combined_sum_doc,"country",site_name)
 combined_sum_doc <<- officer::headers_replace_text_at_bkm(combined_sum_doc,"year",survey_year)
+combined_sum_doc <<- officer::footers_replace_text_at_bkm(combined_sum_doc,"bmk1",as.character(n_cutoff))
 #})
 i=NULL
 for(i in 1:length(new_variables)){
@@ -271,4 +272,4 @@ for(i in 1:length(new_variables)){
 
 # print combine doc
 
-print(combined_sum_doc,target=paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' Summary Tables.docx')) 
+print(combined_sum_doc,target=paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' GSHS Summary Tables.docx')) 

@@ -1,6 +1,6 @@
 ###NOTE: Please uncomment lines 2 -3 when working with rstudio interface
-#mapping_matrix = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Matrix')
-#original_raw_data = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Raw') %>% mutate(record_id = 1:n())
+# mapping_matrix = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Matrix')
+# data_v1 = read_excel(paste0(getwd(),'/data inputs/data.xlsx'),'Data version 1') %>% mutate(record_id = 1:n())
 ####Langauge Matrix
 language_matrix = read_excel(paste0(getwd(),'/scripts/LANGUAGES.xlsx')) %>% as.data.frame()
 colnames(language_matrix) = tolower(colnames(language_matrix))
@@ -88,8 +88,8 @@ if (number_row<500){
   n_cutoff = 100
 }
 ##
-ft_text1 = lang_titles[27]
-ft_text2 = paste0(lang_titles[28],' ',n_cutoff)
+# ft_text1 = lang_titles[27]
+# ft_text2 = paste0(lang_titles[28],' ',n_cutoff)
 ######################################################################################################################################################################
 ######################################################################################################################################################################
 data = data %>% as.data.frame()
@@ -184,17 +184,16 @@ flex_dictionary = generated_dictionary %>% flextable()%>%
                   compose(j = 1, i = cells_to_NA, value = as_paragraph(as_chunk(NA)))
 
 ## Printing of Codebook::::
-doc = read_docx(paste0(getwd(),'/templates/',language,'/codebook_template.docx'))
-#
+doc = officer::read_docx(paste0(getwd(),'/templates/',language,'/codebook_template.docx'))
 doc = headers_replace_text_at_bkm(doc,"country",site_name)
 doc = headers_replace_text_at_bkm(doc,"year",survey_year)
 
-#
+
 doc=doc %>% cursor_bookmark(id  = "table1") %>%
   body_add_flextable(width(flex_dictionary, width = dim(flex_dictionary)$widths*6.5/(flextable_dim(flex_dictionary)$widths)), pos = "on", align = 'left')
 
 
-print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' Codebook.docx')) 
+print(doc,target=paste0(getwd(),'/Batch Reports/',survey_year,' ' ,site_name,' GSHS Codebook.docx')) 
 
 
 
