@@ -173,8 +173,22 @@ completeness =  raw_data %>%
 
 ###Dropping variables with <60% documentation
 vars_with_less60 = (completeness %>% dplyr::filter(completeness< .6 & variable!= "many_similar" & variable!= "many_similar == FALSE"))$variable
-##Editing the mapping dictionary
-map_dictionary = map_dictionary %>%dplyr::filter(eval(parse(text = paste0('site != "',vars_with_less60,'"', collapse = ' & '))))
+
+##Removing the variables and related generated standard variables from the dataset
+standard_vars_to_remove <- map_dictionary %>%
+  dplyr::filter(site %in% vars_with_less60) %>%
+  dplyr::pull(standard)
+
+vars_to_remove <- unique(c(vars_with_less60, standard_vars_to_remove))
+raw_data <- raw_data %>%
+  dplyr::select(-dplyr::any_of(vars_to_remove))
+excl_variables <- setdiff(excl_variables, standard_vars_to_remove)
+
+##Editing the mapping dictionary and all matrix instances
+updated_matrix <- updated_matrix %>% dplyr::filter(is.na(site) | !site %in% vars_with_less60)
+map_dictionary <- map_dictionary %>%dplyr::filter(is.na(site) | !site %in% vars_with_less60)
+mapping_matrix = mapping_matrix %>%dplyr::filter(is.na(site) | !site %in% vars_with_less60)
+map_categorical = map_categorical %>%dplyr::filter(is.na(site) | !site %in% vars_with_less60)
 
 
 # Data are checked to ensure that each student has at least 20 valid responses once all other edits have been completed.
