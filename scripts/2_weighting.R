@@ -286,4 +286,4 @@ sum_post_strat_weights = sum(raw_data$post_strat_weights, na.rm = T)
 Ntotal = nrow(raw_data)
 #
 raw_data = raw_data %>% mutate(normalised_weights = (post_strat_weights/ sum_post_strat_weights) * Ntotal) 
-
+raw_data = raw_data %>% dplyr::select(-c(weights_gt_50th_p,weights_gt_90th_p))
