@@ -274,7 +274,7 @@ raw_data = raw_data %>%mutate(post_strat_weights = post_adj_factor*prestrat_wgt)
 weight_quintiles = raw_data %>% group_by(category) %>%
                     reframe(weights_gt_50th_p = quantile(post_strat_weights, .50,na.rm = T),
                            weights_gt_90th_p = quantile(post_strat_weights, .90,na.rm = T))%>%
-                    dplyr::select(category,weights_gt_50th_p,weights_gt_50th_p)
+                    dplyr::select(category,weights_gt_50th_p,weights_gt_90th_p)
 #
 raw_data = raw_data %>% 
            left_join(weight_quintiles) %>% 
