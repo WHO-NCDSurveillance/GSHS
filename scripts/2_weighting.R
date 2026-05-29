@@ -278,7 +278,7 @@ weight_quintiles = raw_data %>% group_by(category) %>%
 #
 raw_data = raw_data %>% 
            left_join(weight_quintiles) %>% 
-           mutate(post_strat_weights = ifelse(post_strat_weights>(4*weights_gt_50th_p),weights_gt_90th_p,post_strat_weights))
+           mutate(post_strat_weights = if_else(post_strat_weights>(4*weights_gt_50th_p),weights_gt_90th_p,post_strat_weights))
 
 ###Normalising postratification weights
 # Calculate the sum of unnormalized weights (this should be approximately Ntotal)
