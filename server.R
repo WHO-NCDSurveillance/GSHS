@@ -78,6 +78,7 @@ server <- function(input, output, session) {
               fluidRow( box(
                 width = 12,height = 27,
                 title = 'Data Processing & Weighting',solidHeader = TRUE,background = 'navy'),align = "center"),
+              fluidRow(box(textInput("country_name_proc", "Enter Site Name:", value = ""), width=6),box(textInput("input_year_proc", "Enter Survey Year:", value = ""), width=6)),
               fluidRow(box(radioButtons("BMI", label = "Will BMI indicators be computed?",
                                         choices = c("Yes", "No"),selected = "Yes", inline = TRUE), width = 4),
                        box(radioButtons("schoolcensus", label = "Was this a census of schools?",
@@ -345,7 +346,7 @@ server <- function(input, output, session) {
     req(input$samplingframe)
     if (is.null(input$samplingframe))
       return(NULL)                
-    data_file=readxl::read_excel(input$samplingframe$datapath, col_types = 'text')
+    data_file=readxl::read_excel(input$samplingframe$datapath, ,col_types = 'text')
     return(data_file)
   })
   
@@ -411,7 +412,7 @@ server <- function(input, output, session) {
     filename = function(){
       site_name <<-input$country_name
       survey_year <<-input$input_year
-      paste0(survey_year,' ' ,site_name,' Summary Tables.docx')
+      paste0(survey_year,' ' ,site_name,' GSHS Summary Tables.docx')
     },
     content = function(cont){
       ###
@@ -427,7 +428,7 @@ server <- function(input, output, session) {
       ###
       source(paste0(getwd(),'/scripts/8_summary_tables.R'),keep.source = T)
       ##
-      file.copy(paste0(getwd(),'/reports/',survey_year,' ' ,site_name,' Summary Tables.docx'), cont)
+      file.copy(paste0(getwd(),'/reports/',survey_year,' ' ,site_name,' GSHS Summary Tables.docx'), cont)
     })
   
   ############
@@ -436,7 +437,7 @@ server <- function(input, output, session) {
     filename = function(){
       site_name <<-input$country_name
       survey_year <<-input$input_year
-      paste0(survey_year,' ' ,site_name,' Detailed Tables.docx')
+      paste0(survey_year,' ' ,site_name,' GSHS Detailed Tables.docx')
     },
     content = function(cont){
       ###
@@ -449,7 +450,7 @@ server <- function(input, output, session) {
       source(paste0(getwd(),'/scripts/4_primary_codebook.R'),local=TRUE)
       source(paste0(getwd(),'/scripts/6_detailed_tables.R'),local=TRUE)
       ###
-      file.copy(paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' Detailed Tables.docx'), cont)
+      file.copy(paste0(getwd(),'/Reports/',survey_year,' ' ,site_name,' GSHS Detailed Tables.docx'), cont)
     })
   
   # Disable the download button initially
@@ -493,13 +494,16 @@ server <- function(input, output, session) {
   output$weighteddata  = downloadHandler(
     
     filename = function(){
-      'Processed_and_Weighted_Data.xlsx'
+      site_name <<-input$country_name_proc
+      survey_year <<-input$input_year_proc
+      paste0(survey_year,'_' ,site_name,'_GSHS_Processed_and_Weighted_Data.xlsx')
     },
     content = function(cont){
       ##Datasets
       req(list_data_frames())
       # 
-      site_name <<-input$country_name
+      site_name <<-input$country_name_proc
+      survey_year <<-input$input_year_proc
       BMI_response <<- input$BMI
       wt_analysis <<- input$weighted_analysis
       language <<-toupper(input$language)
@@ -509,11 +513,8 @@ server <- function(input, output, session) {
       source(paste0(getwd(),'/scripts/2_weighting.R'),local=TRUE)
       source(paste0(getwd(),'/scripts/3_pre_report_processing.R'),local=TRUE)
       ##
-      file.copy(paste0(getwd(),'/weighted_dataset/Processed_and_Weighted_Data.xlsx'), cont)
+      file.copy(paste0(getwd(),'/weighted_dataset/',survey_year,'_' ,site_name,'_GSHS_Processed_and_Weighted_Data.xlsx'), cont)
     })
-  
-  
-  
 }
 
 
