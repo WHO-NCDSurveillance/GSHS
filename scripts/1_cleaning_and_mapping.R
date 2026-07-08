@@ -133,9 +133,9 @@ if (BMI_response == 'Yes')
   # Cleaning BMI-Age based on published cut-offs by age and sex
             mutate(bmiAgeZ = ifelse((bmiAgeZ < (-5) | bmiAgeZ > 5), NA, bmiAgeZ), 
                    BMI_status = case_when(bmiAgeZ < (-2) ~ 1,
-                                            bmiAgeZ >= (-2) & bmiAgeZ < 1 ~ 2,
-                                            bmiAgeZ >= 1 & bmiAgeZ < 2 ~ 3,
-                                            bmiAgeZ >=2 ~ 4),
+                                            bmiAgeZ >= (-2) & bmiAgeZ <= 1 ~ 2,
+                                            bmiAgeZ > 1 & bmiAgeZ <= 2 ~ 3,
+                                            bmiAgeZ >2 ~ 4),
                    BMI_status = factor(BMI_status, levels = 1:4, labels = c('Underweight','Normal','Overweight','Obese')))
 
   # Applying WHO height-for-age standards to generate z scores for stunting assessment
