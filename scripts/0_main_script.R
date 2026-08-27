@@ -41,7 +41,7 @@ site_name = 'Country name'
 survey_year ='2025'
 # cleaning and mapping expects first of two below yet it's not manually generated here, only in R Shiny
 compute_BMI_indicators = TRUE
-#BMI_response = "Yes"
+BMI_response = "Yes"
 
 weighted_analysis = FALSE
 is_this_census = FALSE
