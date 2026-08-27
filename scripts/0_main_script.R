@@ -41,7 +41,7 @@ site_name = 'Country name'
 survey_year ='2025'
 # cleaning and mapping expects first of two below yet it's not manually generated here, only in R Shiny
 compute_BMI_indicators = TRUE
-BMI_response = "Yes"
+#BMI_response = "Yes"
 
 weighted_analysis = FALSE
 is_this_census = FALSE
@@ -56,7 +56,7 @@ unlink(paste0(getwd(),"/temp_tables/*"))
 unlink(paste0(getwd(),"/reports/*"))
 unlink(paste0(getwd(),"/weighted dataset/*"))
 
-# The scripts are structured into xxx sections as indicated below
+# The scripts are structured into sections as indicated below
 
 ##Section 1: Edit checks, cleaning, and mapping site specific survey questions to standard format
 source(paste0(getwd(),'/scripts/1_cleaning_and_mapping.R'))
