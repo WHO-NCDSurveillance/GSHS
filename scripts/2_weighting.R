@@ -57,16 +57,16 @@ eval(parse(text=paste0('raw_data$',map_categorical$standard, '= factor(as.charac
 # eval(parse(text=paste0('label(raw_data$',map_dictionary$standard,') = "',gsub('\\s+',' ',gsub('^\\s*[^:]*:\\s*','',map_dictionary$survey_question)),'"')))
 
 #setting column names to lower case
-colnames(frame_schools) = tolower(colnames(frame_schools))
-colnames(sample_schools) = tolower(colnames(sample_schools))
+#colnames(frame_schools) = tolower(colnames(frame_schools))
+#colnames(sample_schools) = tolower(colnames(sample_schools))
 
 # convert all enrolment columns in sampling frame to numeric
-frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)] <- 
+frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)] = 
   lapply(frame_schools[, grepl("boys|girls", names(frame_schools), ignore.case = TRUE)], as.numeric)
 
 # ensuring all empty enrolment cells are set to 0 and not NA so total enrolment can be calculated
 #frame_schools[is.na(frame_schools)]=0
-frame_schools <- frame_schools %>%
+frame_schools = frame_schools %>%
   mutate(across(where(is.numeric), ~ replace_na(.x, 0)))
 
 # adding total enrolment for each school to frame_schools
